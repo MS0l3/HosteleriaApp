@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('muestra el logo de joviat en el encabezado', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const logoElement = screen.getByAltText(/logo_joviat/i);
+  expect(logoElement).toBeInTheDocument();
 });
