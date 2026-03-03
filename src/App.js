@@ -3,7 +3,7 @@ import logoJoviat from './logo_joviat.webp';
 import './App.css';
 
 function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
     setSidebarOpen((prevOpen) => !prevOpen);
@@ -14,15 +14,16 @@ function App() {
   };
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${sidebarOpen ? 'sidebar-visible' : ''}`}>
       <header className="top-header">
         <button
           type="button"
           className="menu-button"
-          aria-label="Abrir barra lateral"
+          aria-label={sidebarOpen ? 'Ocultar barra lateral' : 'Mostrar barra lateral'}
+          aria-expanded={sidebarOpen}
           onClick={toggleSidebar}
         >
-          ☰
+          {sidebarOpen ? '✕' : '☰'}
         </button>
 
         <img src={logoJoviat} className="header-logo" alt="logo_joviat" />
