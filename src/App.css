@@ -111,15 +111,17 @@ body {
 }
 
 @media (min-width: 992px) {
+  .menu-button {
+    display: none;
+  }
+
   .sidebar {
+    transform: translateX(0);
     z-index: 20;
   }
 
-  .app-layout.sidebar-visible .content {
-    margin-left: 250px;
-  }
-
   .content {
+    margin-left: 250px;
     transition: margin-left 0.25s ease;
     padding: 2rem;
   }
