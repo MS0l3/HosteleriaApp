@@ -1,7 +1,49 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import logoJoviat from './logo_joviat.webp';
 import { fetchAlumni, fetchRestaurants } from './alumniApi';
 import './App.css';
+
+let leafletLoader;
+
+function loadLeaflet() {
+  if (process.env.NODE_ENV === 'test') {
+    return Promise.resolve(null);
+  }
+
+  if (window.L) {
+    return Promise.resolve(window.L);
+  }
+
+  if (!leafletLoader) {
+    leafletLoader = new Promise((resolve, reject) => {
+      const cssId = 'leaflet-css';
+      if (!document.getElementById(cssId)) {
+        const link = document.createElement('link');
+        link.id = cssId;
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+
+      const scriptId = 'leaflet-js';
+      const existingScript = document.getElementById(scriptId);
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve(window.L));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.async = true;
+      script.onload = () => resolve(window.L);
+      script.onerror = () => reject(new Error('No s’ha pogut carregar el mapa.'));
+      document.body.appendChild(script);
+    });
+  }
+
+  return leafletLoader;
+}
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -10,6 +52,15 @@ function App() {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mapError, setMapError] = useState('');
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersLayerRef = useRef(null);
+
+  const goHome = () => {
+    setActiveSection('alumni');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const toggleSidebar = () => {
     setSidebarOpen((prevOpen) => !prevOpen);
@@ -43,6 +94,65 @@ function App() {
     loadSectionData();
   }, [activeSection]);
 
+  useEffect(() => {
+    if (activeSection !== 'restaurants') {
+      return;
+    }
+
+    const validRestaurants = restaurants.filter((restaurant) => restaurant.location);
+    if (!validRestaurants.length || !mapContainerRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const renderMap = async () => {
+      try {
+        const L = await loadLeaflet();
+        if (!L || cancelled || !mapContainerRef.current) {
+          return;
+        }
+
+        if (!mapInstanceRef.current) {
+          const first = validRestaurants[0].location;
+          mapInstanceRef.current = L.map(mapContainerRef.current).setView([first.lat, first.lng], 11);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+          }).addTo(mapInstanceRef.current);
+        }
+
+        if (markersLayerRef.current) {
+          markersLayerRef.current.remove();
+        }
+
+        markersLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
+
+        const bounds = [];
+        validRestaurants.forEach((restaurant) => {
+          const { lat, lng } = restaurant.location;
+          L.marker([lat, lng]).bindPopup(restaurant.name).addTo(markersLayerRef.current);
+          bounds.push([lat, lng]);
+        });
+
+        if (bounds.length > 1) {
+          mapInstanceRef.current.fitBounds(bounds, { padding: [30, 30] });
+        } else if (bounds.length === 1) {
+          mapInstanceRef.current.setView(bounds[0], 12);
+        }
+
+        setMapError('');
+      } catch (renderError) {
+        setMapError(renderError.message);
+      }
+    };
+
+    renderMap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSection, restaurants]);
+
   return (
     <div className={`app-layout ${sidebarOpen ? 'sidebar-visible' : ''}`}>
       <header className="top-header">
@@ -56,7 +166,9 @@ function App() {
           {sidebarOpen ? '✕' : '☰'}
         </button>
 
-        <img src={logoJoviat} className="header-logo" alt="logo_joviat" />
+        <button type="button" className="logo-button" onClick={goHome} aria-label="Anar a la pàgina inicial">
+          <img src={logoJoviat} className="header-logo" alt="logo_joviat" />
+        </button>
       </header>
 
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -108,22 +220,30 @@ function App() {
         )}
 
         {!loading && !error && activeSection === 'restaurants' && (
-          <section className="restaurant-grid" aria-label="Llista de restaurants al mapa">
-            {restaurants.map((restaurant) => (
-              <article key={restaurant.id} className="restaurant-card">
-                <h2>{restaurant.name}</h2>
-                {restaurant.location ? (
-                  <iframe
-                    title={`Mapa de ${restaurant.name}`}
-                    className="restaurant-map"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${restaurant.location.lng - 0.01}%2C${restaurant.location.lat - 0.01}%2C${restaurant.location.lng + 0.01}%2C${restaurant.location.lat + 0.01}&layer=mapnik&marker=${restaurant.location.lat}%2C${restaurant.location.lng}`}
-                  />
-                ) : (
-                  <p>No hi ha coordenades disponibles.</p>
-                )}
-              </article>
-            ))}
-          </section>
+          <>
+            <section className="restaurants-overview-map" aria-label="Mapa amb pins de restaurants">
+              <h2>Mapa general de restaurants</h2>
+              {mapError && <p className="error-message">{mapError}</p>}
+              <div ref={mapContainerRef} className="restaurants-map-canvas" />
+            </section>
+
+            <section className="restaurant-grid" aria-label="Llista de restaurants al mapa">
+              {restaurants.map((restaurant) => (
+                <article key={restaurant.id} className="restaurant-card">
+                  <h2>{restaurant.name}</h2>
+                  {restaurant.location ? (
+                    <iframe
+                      title={`Mapa de ${restaurant.name}`}
+                      className="restaurant-map"
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${restaurant.location.lng - 0.01}%2C${restaurant.location.lat - 0.01}%2C${restaurant.location.lng + 0.01}%2C${restaurant.location.lat + 0.01}&layer=mapnik&marker=${restaurant.location.lat}%2C${restaurant.location.lng}`}
+                    />
+                  ) : (
+                    <p>No hi ha coordenades disponibles.</p>
+                  )}
+                </article>
+              ))}
+            </section>
+          </>
         )}
       </main>
     </div>
