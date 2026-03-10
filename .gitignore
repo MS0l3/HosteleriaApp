@@ -26,6 +26,8 @@ chrome-user-data
 /tmp
 /.worktrees
 .claude/*.local.*
+/firebaseConfig.js
+/alumniApi.js
 
 packages/react-devtools-core/dist
 packages/react-devtools-extensions/chrome/build
