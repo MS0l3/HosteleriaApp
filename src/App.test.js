@@ -64,3 +64,43 @@ test('permite ver restaurantes en el mapa desde el menú', async () => {
   expect(screen.getByTitle(/mapa de can jubany/i)).toBeInTheDocument();
   await waitFor(() => expect(fetchRestaurants).toHaveBeenCalled());
 });
+
+
+test('filtra alumnes pel nom al cercador', async () => {
+  fetchAlumni.mockResolvedValue([
+    { id: 'a1', name: 'Marta', photoUrl: '' },
+    { id: 'a2', name: 'Joan', photoUrl: '' },
+  ]);
+
+  render(<App />);
+
+  expect(await screen.findByText('Marta')).toBeInTheDocument();
+  expect(screen.getByText('Joan')).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText(/buscar alumne per nom/i), {
+    target: { value: 'mar' },
+  });
+
+  expect(screen.getByText('Marta')).toBeInTheDocument();
+  expect(screen.queryByText('Joan')).not.toBeInTheDocument();
+});
+
+test('filtra restaurants pel nom al cercador del mapa', async () => {
+  fetchRestaurants.mockResolvedValue([
+    { id: 'rest-1', name: 'Can Jubany', location: { lat: 41.92, lng: 2.3 } },
+    { id: 'rest-2', name: 'Disfrutar', location: { lat: 41.39, lng: 2.16 } },
+  ]);
+
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+
+  expect(await screen.findByText('Can Jubany')).toBeInTheDocument();
+  expect(screen.getByText('Disfrutar')).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText(/buscar restaurant per nom/i), {
+    target: { value: 'dis' },
+  });
+
+  expect(screen.getByText('Disfrutar')).toBeInTheDocument();
+  expect(screen.queryByText('Can Jubany')).not.toBeInTheDocument();
+});

@@ -129,6 +129,29 @@ body {
   color: #fecaca;
 }
 
+
+.search-label {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.search-input {
+  width: min(420px, 100%);
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.search-input:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 1px;
+}
+
 .alumni-grid,
 .restaurant-grid {
   display: grid;

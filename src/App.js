@@ -74,9 +74,20 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mapError, setMapError] = useState('');
+  const [alumniSearch, setAlumniSearch] = useState('');
+  const [restaurantSearch, setRestaurantSearch] = useState('');
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
+
+  const normalizedAlumniSearch = alumniSearch.trim().toLowerCase();
+  const normalizedRestaurantSearch = restaurantSearch.trim().toLowerCase();
+  const filteredAlumni = alumni.filter((student) =>
+    student.name.toLowerCase().includes(normalizedAlumniSearch)
+  );
+  const filteredRestaurants = restaurants.filter((restaurant) =>
+    restaurant.name.toLowerCase().includes(normalizedRestaurantSearch)
+  );
 
   const goHome = () => {
     setActiveSection('alumni');
@@ -120,7 +131,7 @@ function App() {
       return;
     }
 
-    const validRestaurants = restaurants.filter((restaurant) => restaurant.location);
+    const validRestaurants = filteredRestaurants.filter((restaurant) => restaurant.location);
     if (!validRestaurants.length || !mapContainerRef.current) {
       return;
     }
@@ -179,7 +190,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [activeSection, restaurants]);
+  }, [activeSection, filteredRestaurants]);
 
   return (
     <div className={`app-layout ${sidebarOpen ? 'sidebar-visible' : ''}`}>
@@ -233,22 +244,44 @@ function App() {
         {error && <p className="error-message">{error}</p>}
 
         {!loading && !error && activeSection === 'alumni' && (
-          <section className="alumni-grid" aria-label="Llista d'alumnes">
-            {alumni.map((student) => (
-              <article key={student.id} className="student-card">
-                {student.photoUrl ? (
-                  <img src={student.photoUrl} alt={student.name} className="student-photo" />
-                ) : (
-                  <div className="student-photo-placeholder">Sense foto</div>
-                )}
-                <h2>{student.name}</h2>
-              </article>
-            ))}
-          </section>
+          <>
+            <label className="search-label" htmlFor="alumni-search">Buscar alumne per nom</label>
+            <input
+              id="alumni-search"
+              type="search"
+              className="search-input"
+              placeholder="Ex: Marta"
+              value={alumniSearch}
+              onChange={(event) => setAlumniSearch(event.target.value)}
+            />
+
+            <section className="alumni-grid" aria-label="Llista d'alumnes">
+              {filteredAlumni.map((student) => (
+                <article key={student.id} className="student-card">
+                  {student.photoUrl ? (
+                    <img src={student.photoUrl} alt={student.name} className="student-photo" />
+                  ) : (
+                    <div className="student-photo-placeholder">Sense foto</div>
+                  )}
+                  <h2>{student.name}</h2>
+                </article>
+              ))}
+            </section>
+          </>
         )}
 
         {!loading && !error && activeSection === 'restaurants' && (
           <>
+            <label className="search-label" htmlFor="restaurant-search">Buscar restaurant per nom</label>
+            <input
+              id="restaurant-search"
+              type="search"
+              className="search-input"
+              placeholder="Ex: Can Jubany"
+              value={restaurantSearch}
+              onChange={(event) => setRestaurantSearch(event.target.value)}
+            />
+
             <section className="restaurants-overview-map" aria-label="Mapa amb pins de restaurants">
               <h2>Mapa general de restaurants</h2>
               {mapError && <p className="error-message">{mapError}</p>}
@@ -256,7 +289,7 @@ function App() {
             </section>
 
             <section className="restaurant-grid" aria-label="Llista de restaurants al mapa">
-              {restaurants.map((restaurant) => (
+              {filteredRestaurants.map((restaurant) => (
                 <article key={restaurant.id} className="restaurant-card">
                   <h2>{restaurant.name}</h2>
                   {restaurant.location ? (
