@@ -5,12 +5,21 @@ import './App.css';
 
 let leafletLoader;
 
+function configureLeafletIcons(L) {
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  });
+}
+
 function loadLeaflet() {
   if (process.env.NODE_ENV === 'test') {
     return Promise.resolve(null);
   }
 
   if (window.L) {
+    configureLeafletIcons(window.L);
     return Promise.resolve(window.L);
   }
 
@@ -28,7 +37,16 @@ function loadLeaflet() {
       const scriptId = 'leaflet-js';
       const existingScript = document.getElementById(scriptId);
       if (existingScript) {
-        existingScript.addEventListener('load', () => resolve(window.L));
+        if (window.L) {
+          configureLeafletIcons(window.L);
+          resolve(window.L);
+          return;
+        }
+
+        existingScript.addEventListener('load', () => {
+          configureLeafletIcons(window.L);
+          resolve(window.L);
+        });
         return;
       }
 
@@ -36,7 +54,10 @@ function loadLeaflet() {
       script.id = scriptId;
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       script.async = true;
-      script.onload = () => resolve(window.L);
+      script.onload = () => {
+        configureLeafletIcons(window.L);
+        resolve(window.L);
+      };
       script.onerror = () => reject(new Error('No s’ha pogut carregar el mapa.'));
       document.body.appendChild(script);
     });
