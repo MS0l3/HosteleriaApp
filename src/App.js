@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import logoJoviat from './logo_joviat.webp';
-import { fetchAlumni } from './alumniApi';
+import { fetchAlumni, fetchRestaurants } from './alumniApi';
 import './App.css';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState('alumni');
   const [alumni, setAlumni] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,17 +20,19 @@ function App() {
   };
 
   useEffect(() => {
-    if (activeSection !== 'alumni') {
-      return;
-    }
-
-    const loadAlumni = async () => {
+    const loadSectionData = async () => {
       setLoading(true);
       setError('');
 
       try {
-        const result = await fetchAlumni();
-        setAlumni(result);
+        if (activeSection === 'alumni') {
+          const result = await fetchAlumni();
+          setAlumni(result);
+          return;
+        }
+
+        const result = await fetchRestaurants();
+        setRestaurants(result);
       } catch (loadError) {
         setError(loadError.message);
       } finally {
@@ -37,7 +40,7 @@ function App() {
       }
     };
 
-    loadAlumni();
+    loadSectionData();
   }, [activeSection]);
 
   return (
@@ -68,6 +71,15 @@ function App() {
                 Visualitzar alumnes
               </button>
             </li>
+            <li>
+              <button
+                type="button"
+                className={`nav-link ${activeSection === 'restaurants' ? 'nav-link-active' : ''}`}
+                onClick={() => setActiveSection('restaurants')}
+              >
+                Veure restaurants al mapa
+              </button>
+            </li>
           </ul>
         </nav>
       </aside>
@@ -75,12 +87,12 @@ function App() {
       {sidebarOpen && <button className="overlay" onClick={closeSidebar} aria-label="Cerrar barra lateral" />}
 
       <main className="content">
-        <h1>Visualitzar alumnes</h1>
+        <h1>{activeSection === 'alumni' ? 'Visualitzar alumnes' : 'Restaurants al mapa'}</h1>
 
-        {loading && <p>Carregant alumnes...</p>}
+        {loading && <p>Carregant dades...</p>}
         {error && <p className="error-message">{error}</p>}
 
-        {!loading && !error && (
+        {!loading && !error && activeSection === 'alumni' && (
           <section className="alumni-grid" aria-label="Llista d'alumnes">
             {alumni.map((student) => (
               <article key={student.id} className="student-card">
@@ -90,6 +102,25 @@ function App() {
                   <div className="student-photo-placeholder">Sense foto</div>
                 )}
                 <h2>{student.name}</h2>
+              </article>
+            ))}
+          </section>
+        )}
+
+        {!loading && !error && activeSection === 'restaurants' && (
+          <section className="restaurant-grid" aria-label="Llista de restaurants al mapa">
+            {restaurants.map((restaurant) => (
+              <article key={restaurant.id} className="restaurant-card">
+                <h2>{restaurant.name}</h2>
+                {restaurant.location ? (
+                  <iframe
+                    title={`Mapa de ${restaurant.name}`}
+                    className="restaurant-map"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${restaurant.location.lng - 0.01}%2C${restaurant.location.lat - 0.01}%2C${restaurant.location.lng + 0.01}%2C${restaurant.location.lat + 0.01}&layer=mapnik&marker=${restaurant.location.lat}%2C${restaurant.location.lng}`}
+                  />
+                ) : (
+                  <p>No hi ha coordenades disponibles.</p>
+                )}
               </article>
             ))}
           </section>

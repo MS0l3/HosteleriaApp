@@ -1,13 +1,18 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-import { fetchAlumni } from './alumniApi';
+import { fetchAlumni, fetchRestaurants } from './alumniApi';
 
 jest.mock('./alumniApi', () => ({
   fetchAlumni: jest.fn(),
+  fetchRestaurants: jest.fn(),
 }));
 
-test('muestra el logo de joviat en el encabezado', async () => {
+beforeEach(() => {
   fetchAlumni.mockResolvedValue([]);
+  fetchRestaurants.mockResolvedValue([]);
+});
+
+test('muestra el logo de joviat en el encabezado', async () => {
   render(<App />);
 
   const logoElement = screen.getByAltText(/logo_joviat/i);
@@ -17,7 +22,6 @@ test('muestra el logo de joviat en el encabezado', async () => {
 });
 
 test('permite ocultar la barra lateral con el botón del menú', async () => {
-  fetchAlumni.mockResolvedValue([]);
   render(<App />);
 
   const toggleButton = screen.getByRole('button', { name: /ocultar barra lateral/i });
@@ -33,4 +37,17 @@ test('muestra alumnos cuando firebase responde', async () => {
 
   expect(await screen.findByText('Kiana')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /visualitzar alumnes/i })).toBeInTheDocument();
+});
+
+test('permite ver restaurantes en el mapa desde el menú', async () => {
+  fetchRestaurants.mockResolvedValue([
+    { id: 'rest-1', name: 'Can Jubany', location: { lat: 41.92, lng: 2.30 } },
+  ]);
+
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+
+  expect(await screen.findByText('Can Jubany')).toBeInTheDocument();
+  expect(screen.getByTitle(/mapa de can jubany/i)).toBeInTheDocument();
+  await waitFor(() => expect(fetchRestaurants).toHaveBeenCalled());
 });
