@@ -151,7 +151,14 @@ function App() {
         const bounds = [];
         validRestaurants.forEach((restaurant) => {
           const { lat, lng } = restaurant.location;
-          L.marker([lat, lng]).bindPopup(restaurant.name).addTo(markersLayerRef.current);
+          L.circleMarker([lat, lng], {
+            radius: 8,
+            fillColor: '#22c55e',
+            color: '#14532d',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.95,
+          }).bindPopup(restaurant.name).addTo(markersLayerRef.current);
           bounds.push([lat, lng]);
         });
 
