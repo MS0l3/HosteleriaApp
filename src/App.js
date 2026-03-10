@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import logoJoviat from './logo_joviat.webp';
+import { fetchAlumni } from './alumniApi';
 import './App.css';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeSection, setActiveSection] = useState('alumni');
+  const [alumni, setAlumni] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const toggleSidebar = () => {
     setSidebarOpen((prevOpen) => !prevOpen);
@@ -12,6 +17,28 @@ function App() {
   const closeSidebar = () => {
     setSidebarOpen(false);
   };
+
+  useEffect(() => {
+    if (activeSection !== 'alumni') {
+      return;
+    }
+
+    const loadAlumni = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const result = await fetchAlumni();
+        setAlumni(result);
+      } catch (loadError) {
+        setError(loadError.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAlumni();
+  }, [activeSection]);
 
   return (
     <div className={`app-layout ${sidebarOpen ? 'sidebar-visible' : ''}`}>
@@ -32,10 +59,15 @@ function App() {
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <nav>
           <ul>
-            <li><a href="#inicio">Inicio</a></li>
-            <li><a href="#reservas">Reservas</a></li>
-            <li><a href="#menu">Menú</a></li>
-            <li><a href="#contacto">Contacto</a></li>
+            <li>
+              <button
+                type="button"
+                className={`nav-link ${activeSection === 'alumni' ? 'nav-link-active' : ''}`}
+                onClick={() => setActiveSection('alumni')}
+              >
+                Visualitzar alumnes
+              </button>
+            </li>
           </ul>
         </nav>
       </aside>
@@ -43,8 +75,25 @@ function App() {
       {sidebarOpen && <button className="overlay" onClick={closeSidebar} aria-label="Cerrar barra lateral" />}
 
       <main className="content">
-        <h1>Bienvenido</h1>
-        <p>Tu contenido principal se adapta para móviles y PC.</p>
+        <h1>Visualitzar alumnes</h1>
+
+        {loading && <p>Carregant alumnes...</p>}
+        {error && <p className="error-message">{error}</p>}
+
+        {!loading && !error && (
+          <section className="alumni-grid" aria-label="Llista d'alumnes">
+            {alumni.map((student) => (
+              <article key={student.id} className="student-card">
+                {student.photoUrl ? (
+                  <img src={student.photoUrl} alt={student.name} className="student-photo" />
+                ) : (
+                  <div className="student-photo-placeholder">Sense foto</div>
+                )}
+                <h2>{student.name}</h2>
+              </article>
+            ))}
+          </section>
+        )}
       </main>
     </div>
   );
