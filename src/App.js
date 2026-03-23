@@ -71,6 +71,8 @@ function App() {
   const [activeSection, setActiveSection] = useState('alumni');
   const [alumni, setAlumni] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
+  const [selectedAlumni, setSelectedAlumni] = useState(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mapError, setMapError] = useState('');
@@ -88,9 +90,13 @@ function App() {
   const filteredRestaurants = restaurants.filter((restaurant) =>
     restaurant.name.toLowerCase().includes(normalizedRestaurantSearch)
   );
+  const isAlumniSection = activeSection === 'alumni' || activeSection === 'alumni-detail';
+  const isRestaurantSection = activeSection === 'restaurants' || activeSection === 'restaurant-detail';
 
   const goHome = () => {
     setActiveSection('alumni');
+    setSelectedAlumni(null);
+    setSelectedRestaurant(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -102,20 +108,42 @@ function App() {
     setSidebarOpen(false);
   };
 
+  const openAlumniList = () => {
+    setSelectedAlumni(null);
+    setActiveSection('alumni');
+  };
+
+  const openRestaurantsList = () => {
+    setSelectedRestaurant(null);
+    setActiveSection('restaurants');
+  };
+
+  const openAlumniDetail = (student) => {
+    setSelectedAlumni(student);
+    setActiveSection('alumni-detail');
+  };
+
+  const openRestaurantDetail = (restaurant) => {
+    setSelectedRestaurant(restaurant);
+    setActiveSection('restaurant-detail');
+  };
+
   useEffect(() => {
     const loadSectionData = async () => {
       setLoading(true);
       setError('');
 
       try {
-        if (activeSection === 'alumni') {
+        if (isAlumniSection) {
           const result = await fetchAlumni();
           setAlumni(result);
           return;
         }
 
-        const result = await fetchRestaurants();
-        setRestaurants(result);
+        if (isRestaurantSection) {
+          const result = await fetchRestaurants();
+          setRestaurants(result);
+        }
       } catch (loadError) {
         setError(loadError.message);
       } finally {
@@ -124,7 +152,7 @@ function App() {
     };
 
     loadSectionData();
-  }, [activeSection]);
+  }, [isAlumniSection, isRestaurantSection]);
 
   useEffect(() => {
     if (activeSection !== 'restaurants') {
@@ -216,8 +244,8 @@ function App() {
             <li>
               <button
                 type="button"
-                className={`nav-link ${activeSection === 'alumni' ? 'nav-link-active' : ''}`}
-                onClick={() => setActiveSection('alumni')}
+                className={`nav-link ${isAlumniSection ? 'nav-link-active' : ''}`}
+                onClick={openAlumniList}
               >
                 Visualitzar alumnes
               </button>
@@ -225,8 +253,8 @@ function App() {
             <li>
               <button
                 type="button"
-                className={`nav-link ${activeSection === 'restaurants' ? 'nav-link-active' : ''}`}
-                onClick={() => setActiveSection('restaurants')}
+                className={`nav-link ${isRestaurantSection ? 'nav-link-active' : ''}`}
+                onClick={openRestaurantsList}
               >
                 Veure restaurants al mapa
               </button>
@@ -238,7 +266,12 @@ function App() {
       {sidebarOpen && <button className="overlay" onClick={closeSidebar} aria-label="Cerrar barra lateral" />}
 
       <main className="content">
-        <h1>{activeSection === 'alumni' ? 'Visualitzar alumnes' : 'Restaurants al mapa'}</h1>
+        <h1>
+          {activeSection === 'alumni' && 'Visualitzar alumnes'}
+          {activeSection === 'alumni-detail' && `Fitxa alumne: ${selectedAlumni?.name ?? ''}`}
+          {activeSection === 'restaurants' && 'Restaurants al mapa'}
+          {activeSection === 'restaurant-detail' && `Fitxa restaurant: ${selectedRestaurant?.name ?? ''}`}
+        </h1>
 
         {loading && <p>Carregant dades...</p>}
         {error && <p className="error-message">{error}</p>}
@@ -257,35 +290,48 @@ function App() {
 
             <section className="alumni-grid" aria-label="Llista d'alumnes">
               {filteredAlumni.map((student) => (
-                <article key={student.id} className="student-card">
-                  {student.photoUrl ? (
-                    <img src={student.photoUrl} alt={student.name} className="student-photo" />
-                  ) : (
-                    <div className="student-photo-placeholder">Sense foto</div>
-                  )}
-                  <h2>{student.name}</h2>
-
-                  <section className="card-section" aria-label={`Contacte de ${student.name}`}>
-                    <h3>Contacte</h3>
-                    <ul className="info-list">
-                      <li><strong>Email:</strong> {student.contact?.email || 'No disponible'}</li>
-                      <li><strong>Phone:</strong> {student.contact?.phone || 'No disponible'}</li>
-                      <li>
-                        <strong>LinkedIn:</strong>{' '}
-                        {student.contact?.linkedin ? (
-                          <a href={student.contact.linkedin} target="_blank" rel="noreferrer">
-                            Veure perfil
-                          </a>
-                        ) : (
-                          'No disponible'
-                        )}
-                      </li>
-                    </ul>
-                  </section>
-                </article>
+                <button key={student.id} type="button" className="card-button" onClick={() => openAlumniDetail(student)}>
+                  <article className="student-card">
+                    {student.photoUrl ? (
+                      <img src={student.photoUrl} alt={student.name} className="student-photo" />
+                    ) : (
+                      <div className="student-photo-placeholder">Sense foto</div>
+                    )}
+                    <h2>{student.name}</h2>
+                  </article>
+                </button>
               ))}
             </section>
           </>
+        )}
+
+        {!loading && !error && activeSection === 'alumni-detail' && selectedAlumni && (
+          <article className="detail-card" aria-label={`Fitxa de ${selectedAlumni.name}`}>
+            <button type="button" className="back-button" onClick={openAlumniList}>← Tornar al llistat</button>
+            {selectedAlumni.photoUrl ? (
+              <img src={selectedAlumni.photoUrl} alt={selectedAlumni.name} className="student-photo" />
+            ) : (
+              <div className="student-photo-placeholder">Sense foto</div>
+            )}
+            <h2>{selectedAlumni.name}</h2>
+            <section className="card-section" aria-label={`Contacte de ${selectedAlumni.name}`}>
+              <h3>Contacte</h3>
+              <ul className="info-list">
+                <li><strong>Email:</strong> {selectedAlumni.contact?.email || 'No disponible'}</li>
+                <li><strong>Phone:</strong> {selectedAlumni.contact?.phone || 'No disponible'}</li>
+                <li>
+                  <strong>LinkedIn:</strong>{' '}
+                  {selectedAlumni.contact?.linkedin ? (
+                    <a href={selectedAlumni.contact.linkedin} target="_blank" rel="noreferrer">
+                      Veure perfil
+                    </a>
+                  ) : (
+                    'No disponible'
+                  )}
+                </li>
+              </ul>
+            </section>
+          </article>
         )}
 
         {!loading && !error && activeSection === 'restaurants' && (
@@ -308,46 +354,60 @@ function App() {
 
             <section className="restaurant-grid" aria-label="Llista de restaurants al mapa">
               {filteredRestaurants.map((restaurant) => (
-                <article key={restaurant.id} className="restaurant-card">
-                  <h2>{restaurant.name}</h2>
-
-                  <section className="card-section" aria-label={`Ubicació de ${restaurant.name}`}>
-                    <h3>Ubicació</h3>
-                    {restaurant.location ? (
-                      <iframe
-                        title={`Mapa de ${restaurant.name}`}
-                        className="restaurant-map"
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${restaurant.location.lng - 0.01}%2C${restaurant.location.lat - 0.01}%2C${restaurant.location.lng + 0.01}%2C${restaurant.location.lat + 0.01}&layer=mapnik&marker=${restaurant.location.lat}%2C${restaurant.location.lng}`}
-                      />
-                    ) : (
-                      <p>No hi ha coordenades disponibles.</p>
-                    )}
-                  </section>
-
-                  <section className="card-section" aria-label={`Contacte de ${restaurant.name}`}>
-                    <h3>Contacte</h3>
-                    <ul className="info-list">
-                      <li><strong>Phone:</strong> {restaurant.contact?.phone || 'No disponible'}</li>
-                      <li><strong>Email:</strong> {restaurant.contact?.email || 'No disponible'}</li>
-                    </ul>
-                  </section>
-
-                  <section className="card-section" aria-label={`Alumnes de ${restaurant.name}`}>
-                    <h3>Llistat alumnes</h3>
-                    {restaurant.alumniList?.length ? (
-                      <ul className="info-list">
-                        {restaurant.alumniList.map((alumniName) => (
-                          <li key={alumniName}>{alumniName}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No hi ha alumnes associats.</p>
-                    )}
-                  </section>
-                </article>
+                <button
+                  key={restaurant.id}
+                  type="button"
+                  className="card-button"
+                  onClick={() => openRestaurantDetail(restaurant)}
+                >
+                  <article className="restaurant-card">
+                    <h2>{restaurant.name}</h2>
+                  </article>
+                </button>
               ))}
             </section>
           </>
+        )}
+
+        {!loading && !error && activeSection === 'restaurant-detail' && selectedRestaurant && (
+          <article className="detail-card" aria-label={`Fitxa de ${selectedRestaurant.name}`}>
+            <button type="button" className="back-button" onClick={openRestaurantsList}>← Tornar al llistat</button>
+            <h2>{selectedRestaurant.name}</h2>
+
+            <section className="card-section" aria-label={`Ubicació de ${selectedRestaurant.name}`}>
+              <h3>Ubicació</h3>
+              {selectedRestaurant.location ? (
+                <iframe
+                  title={`Mapa de ${selectedRestaurant.name}`}
+                  className="restaurant-map"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedRestaurant.location.lng - 0.01}%2C${selectedRestaurant.location.lat - 0.01}%2C${selectedRestaurant.location.lng + 0.01}%2C${selectedRestaurant.location.lat + 0.01}&layer=mapnik&marker=${selectedRestaurant.location.lat}%2C${selectedRestaurant.location.lng}`}
+                />
+              ) : (
+                <p>No hi ha coordenades disponibles.</p>
+              )}
+            </section>
+
+            <section className="card-section" aria-label={`Contacte de ${selectedRestaurant.name}`}>
+              <h3>Contacte</h3>
+              <ul className="info-list">
+                <li><strong>Phone:</strong> {selectedRestaurant.contact?.phone || 'No disponible'}</li>
+                <li><strong>Email:</strong> {selectedRestaurant.contact?.email || 'No disponible'}</li>
+              </ul>
+            </section>
+
+            <section className="card-section" aria-label={`Alumnes de ${selectedRestaurant.name}`}>
+              <h3>Llistat alumnes</h3>
+              {selectedRestaurant.alumniList?.length ? (
+                <ul className="info-list">
+                  {selectedRestaurant.alumniList.map((alumniName) => (
+                    <li key={alumniName}>{alumniName}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No hi ha alumnes associats.</p>
+              )}
+            </section>
+          </article>
         )}
       </main>
     </div>

@@ -61,7 +61,7 @@ test('permite ver restaurantes en el mapa desde el menú', async () => {
 
   expect(await screen.findByText('Can Jubany')).toBeInTheDocument();
   expect(screen.getByLabelText(/mapa amb pins de restaurants/i)).toBeInTheDocument();
-  expect(screen.getByTitle(/mapa de can jubany/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /can jubany/i })).toBeInTheDocument();
   await waitFor(() => expect(fetchRestaurants).toHaveBeenCalled());
 });
 
@@ -105,7 +105,7 @@ test('filtra restaurants pel nom al cercador del mapa', async () => {
   expect(screen.queryByText('Can Jubany')).not.toBeInTheDocument();
 });
 
-test('mostra la fitxa de contacte dels alumnes', async () => {
+test('obre la fitxa d alumne en una pàgina dedicada', async () => {
   fetchAlumni.mockResolvedValue([
     {
       id: 'a1',
@@ -122,17 +122,20 @@ test('mostra la fitxa de contacte dels alumnes', async () => {
   render(<App />);
 
   expect(await screen.findByText('Marta Soler')).toBeInTheDocument();
-  expect(screen.getByText(/Email:/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /marta soler/i }));
+
+  expect(await screen.findByRole('heading', { name: /fitxa alumne: marta soler/i })).toBeInTheDocument();
   expect(screen.getByText('marta@demo.cat')).toBeInTheDocument();
-  expect(screen.getByText(/Phone:/i)).toBeInTheDocument();
   expect(screen.getByText('600123123')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /veure perfil/i })).toHaveAttribute(
     'href',
     'https://linkedin.com/in/martasoler'
   );
+  fireEvent.click(screen.getByRole('button', { name: /tornar al llistat/i }));
+  expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
 });
 
-test('mostra la fitxa completa del restaurant amb ubicació, contacte i alumnes', async () => {
+test('obre la fitxa de restaurant en una pàgina dedicada', async () => {
   fetchRestaurants.mockResolvedValue([
     {
       id: 'rest-1',
@@ -147,6 +150,9 @@ test('mostra la fitxa completa del restaurant amb ubicació, contacte i alumnes'
   fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
 
   expect(await screen.findByText('Can Escola')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /can escola/i }));
+
+  expect(await screen.findByRole('heading', { name: /fitxa restaurant: can escola/i })).toBeInTheDocument();
   expect(screen.getByText(/Ubicació/i)).toBeInTheDocument();
   expect(screen.getByText(/Contacte/i)).toBeInTheDocument();
   expect(screen.getByText(/Llistat alumnes/i)).toBeInTheDocument();
@@ -154,4 +160,6 @@ test('mostra la fitxa completa del restaurant amb ubicació, contacte i alumnes'
   expect(screen.getByText('info@canescola.cat')).toBeInTheDocument();
   expect(screen.getByText('Anna Puig')).toBeInTheDocument();
   expect(screen.getByText('Marc Vila')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /tornar al llistat/i }));
+  expect(await screen.findByRole('heading', { name: /restaurants al mapa/i })).toBeInTheDocument();
 });
