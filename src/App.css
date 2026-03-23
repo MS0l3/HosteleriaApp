@@ -207,6 +207,33 @@ body {
   border: none;
 }
 
+
+.card-section {
+  padding: 0 0.75rem 0.9rem;
+}
+
+.card-section h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  color: #93c5fd;
+}
+
+.info-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.25rem;
+  color: #cbd5e1;
+}
+
+.info-list a {
+  color: #93c5fd;
+}
+
+.info-list a:hover {
+  color: #bfdbfe;
+}
+
 .restaurant-card p {
   margin: 0;
   padding: 0 0.75rem 0.75rem;

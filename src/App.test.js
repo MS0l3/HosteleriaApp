@@ -104,3 +104,54 @@ test('filtra restaurants pel nom al cercador del mapa', async () => {
   expect(screen.getByText('Disfrutar')).toBeInTheDocument();
   expect(screen.queryByText('Can Jubany')).not.toBeInTheDocument();
 });
+
+test('mostra la fitxa de contacte dels alumnes', async () => {
+  fetchAlumni.mockResolvedValue([
+    {
+      id: 'a1',
+      name: 'Marta Soler',
+      photoUrl: '',
+      contact: {
+        email: 'marta@demo.cat',
+        phone: '600123123',
+        linkedin: 'https://linkedin.com/in/martasoler',
+      },
+    },
+  ]);
+
+  render(<App />);
+
+  expect(await screen.findByText('Marta Soler')).toBeInTheDocument();
+  expect(screen.getByText(/Email:/i)).toBeInTheDocument();
+  expect(screen.getByText('marta@demo.cat')).toBeInTheDocument();
+  expect(screen.getByText(/Phone:/i)).toBeInTheDocument();
+  expect(screen.getByText('600123123')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /veure perfil/i })).toHaveAttribute(
+    'href',
+    'https://linkedin.com/in/martasoler'
+  );
+});
+
+test('mostra la fitxa completa del restaurant amb ubicació, contacte i alumnes', async () => {
+  fetchRestaurants.mockResolvedValue([
+    {
+      id: 'rest-1',
+      name: 'Can Escola',
+      location: { lat: 41.4, lng: 2.1 },
+      contact: { phone: '938000000', email: 'info@canescola.cat' },
+      alumniList: ['Anna Puig', 'Marc Vila'],
+    },
+  ]);
+
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+
+  expect(await screen.findByText('Can Escola')).toBeInTheDocument();
+  expect(screen.getByText(/Ubicació/i)).toBeInTheDocument();
+  expect(screen.getByText(/Contacte/i)).toBeInTheDocument();
+  expect(screen.getByText(/Llistat alumnes/i)).toBeInTheDocument();
+  expect(screen.getByText('938000000')).toBeInTheDocument();
+  expect(screen.getByText('info@canescola.cat')).toBeInTheDocument();
+  expect(screen.getByText('Anna Puig')).toBeInTheDocument();
+  expect(screen.getByText('Marc Vila')).toBeInTheDocument();
+});

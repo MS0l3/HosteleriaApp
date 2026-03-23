@@ -3,11 +3,49 @@ import { firebaseConfig } from './firebaseConfig';
 const projectId = firebaseConfig.projectId;
 const apiKey = firebaseConfig.apiKey;
 
-const toPlainAlumni = (doc) => ({
-  id: doc.name?.split('/').pop() ?? '',
-  name: doc.fields?.Name?.stringValue ?? 'Sense nom',
-  photoUrl: doc.fields?.PhotoURL?.stringValue ?? '',
-});
+const getStringField = (fields, candidates, fallback = '') => {
+  const match = candidates
+    .map((name) => fields?.[name]?.stringValue?.trim())
+    .find((value) => value);
+
+  return match ?? fallback;
+};
+
+const parseStringList = (arrayField) => {
+  const values = arrayField?.arrayValue?.values;
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values
+    .map((entry) => {
+      if (entry?.stringValue) {
+        return entry.stringValue.trim();
+      }
+
+      if (entry?.mapValue?.fields?.Name?.stringValue) {
+        return entry.mapValue.fields.Name.stringValue.trim();
+      }
+
+      return '';
+    })
+    .filter(Boolean);
+};
+
+const toPlainAlumni = (doc) => {
+  const fields = doc.fields ?? {};
+
+  return {
+    id: doc.name?.split('/').pop() ?? '',
+    name: getStringField(fields, ['Name', 'Nom'], 'Sense nom'),
+    photoUrl: getStringField(fields, ['PhotoURL', 'Photo', 'Image']),
+    contact: {
+      email: getStringField(fields, ['Email', 'Mail']),
+      phone: getStringField(fields, ['Phone', 'Telefon', 'Telèfon']),
+      linkedin: getStringField(fields, ['LinkedIn', 'Linkedin', 'LinkedInURL']),
+    },
+  };
+};
 
 const parseCoordinate = (value) => {
   if (!value) {
@@ -46,17 +84,27 @@ const parseCoordinate = (value) => {
 };
 
 const toPlainRestaurant = (doc) => {
-  const geoPoint = doc.fields?.Location?.geoPointValue;
-  const locationString = doc.fields?.Location?.stringValue;
+  const fields = doc.fields ?? {};
+  const geoPoint = fields.Location?.geoPointValue;
+  const locationString = fields.Location?.stringValue;
 
   const location = geoPoint
     ? { lat: geoPoint.latitude, lng: geoPoint.longitude }
     : parseCoordinate(locationString);
 
+  const alumniList = parseStringList(fields.Alumni)
+    .concat(parseStringList(fields.Alumnes))
+    .concat(parseStringList(fields.Students));
+
   return {
     id: doc.name?.split('/').pop() ?? '',
-    name: doc.fields?.Name?.stringValue ?? 'Restaurant sense nom',
+    name: getStringField(fields, ['Name', 'Nom'], 'Restaurant sense nom'),
     location,
+    contact: {
+      phone: getStringField(fields, ['Phone', 'Telefon', 'Telèfon']),
+      email: getStringField(fields, ['Email', 'Mail']),
+    },
+    alumniList,
   };
 };
 

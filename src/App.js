@@ -264,6 +264,24 @@ function App() {
                     <div className="student-photo-placeholder">Sense foto</div>
                   )}
                   <h2>{student.name}</h2>
+
+                  <section className="card-section" aria-label={`Contacte de ${student.name}`}>
+                    <h3>Contacte</h3>
+                    <ul className="info-list">
+                      <li><strong>Email:</strong> {student.contact?.email || 'No disponible'}</li>
+                      <li><strong>Phone:</strong> {student.contact?.phone || 'No disponible'}</li>
+                      <li>
+                        <strong>LinkedIn:</strong>{' '}
+                        {student.contact?.linkedin ? (
+                          <a href={student.contact.linkedin} target="_blank" rel="noreferrer">
+                            Veure perfil
+                          </a>
+                        ) : (
+                          'No disponible'
+                        )}
+                      </li>
+                    </ul>
+                  </section>
                 </article>
               ))}
             </section>
@@ -292,15 +310,40 @@ function App() {
               {filteredRestaurants.map((restaurant) => (
                 <article key={restaurant.id} className="restaurant-card">
                   <h2>{restaurant.name}</h2>
-                  {restaurant.location ? (
-                    <iframe
-                      title={`Mapa de ${restaurant.name}`}
-                      className="restaurant-map"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${restaurant.location.lng - 0.01}%2C${restaurant.location.lat - 0.01}%2C${restaurant.location.lng + 0.01}%2C${restaurant.location.lat + 0.01}&layer=mapnik&marker=${restaurant.location.lat}%2C${restaurant.location.lng}`}
-                    />
-                  ) : (
-                    <p>No hi ha coordenades disponibles.</p>
-                  )}
+
+                  <section className="card-section" aria-label={`Ubicació de ${restaurant.name}`}>
+                    <h3>Ubicació</h3>
+                    {restaurant.location ? (
+                      <iframe
+                        title={`Mapa de ${restaurant.name}`}
+                        className="restaurant-map"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${restaurant.location.lng - 0.01}%2C${restaurant.location.lat - 0.01}%2C${restaurant.location.lng + 0.01}%2C${restaurant.location.lat + 0.01}&layer=mapnik&marker=${restaurant.location.lat}%2C${restaurant.location.lng}`}
+                      />
+                    ) : (
+                      <p>No hi ha coordenades disponibles.</p>
+                    )}
+                  </section>
+
+                  <section className="card-section" aria-label={`Contacte de ${restaurant.name}`}>
+                    <h3>Contacte</h3>
+                    <ul className="info-list">
+                      <li><strong>Phone:</strong> {restaurant.contact?.phone || 'No disponible'}</li>
+                      <li><strong>Email:</strong> {restaurant.contact?.email || 'No disponible'}</li>
+                    </ul>
+                  </section>
+
+                  <section className="card-section" aria-label={`Alumnes de ${restaurant.name}`}>
+                    <h3>Llistat alumnes</h3>
+                    {restaurant.alumniList?.length ? (
+                      <ul className="info-list">
+                        {restaurant.alumniList.map((alumniName) => (
+                          <li key={alumniName}>{alumniName}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No hi ha alumnes associats.</p>
+                    )}
+                  </section>
                 </article>
               ))}
             </section>
