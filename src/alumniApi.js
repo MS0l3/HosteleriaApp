@@ -99,6 +99,7 @@ const toPlainRestaurant = (doc) => {
   return {
     id: doc.name?.split('/').pop() ?? '',
     name: getStringField(fields, ['Name', 'Nom'], 'Restaurant sense nom'),
+    photoUrl: getStringField(fields, ['PhotoURL', 'Photo', 'Image']),
     location,
     contact: {
       phone: getStringField(fields, ['Phone', 'Telefon', 'Telèfon']),

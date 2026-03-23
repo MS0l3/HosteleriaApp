@@ -102,3 +102,16 @@ test('obre la fitxa de restaurant en una pàgina dedicada', async () => {
   expect(screen.getByText('Anna Puig')).toBeInTheDocument();
   expect(screen.getByText('Marc Vila')).toBeInTheDocument();
 });
+
+test('mostra fotos predeterminades quan no hi ha imatge d alumne o restaurant', async () => {
+  fetchAlumni.mockResolvedValue([{ id: 'a1', name: 'Marta', photoUrl: '' }]);
+  fetchRestaurants.mockResolvedValue([{ id: 'r1', name: 'Can Blau', photoUrl: '', location: null }]);
+
+  render(<App />);
+  login();
+
+  expect(await screen.findByAltText(/foto predeterminada de marta/i)).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  expect(await screen.findByAltText(/foto predeterminada de can blau/i)).toBeInTheDocument();
+});

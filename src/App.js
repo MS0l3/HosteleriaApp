@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import logoJoviat from './logo_joviat.webp';
+import defaultAlumniPhoto from './default_alumni.svg';
+import defaultRestaurantPhoto from './default_restaurant.svg';
 import { fetchAlumni, fetchRestaurants } from './alumniApi';
 import './App.css';
 
@@ -364,7 +366,7 @@ function App() {
                     {student.photoUrl ? (
                       <img src={student.photoUrl} alt={student.name} className="student-photo" />
                     ) : (
-                      <div className="student-photo-placeholder">Sense foto</div>
+                      <img src={defaultAlumniPhoto} alt={`Foto predeterminada de ${student.name}`} className="student-photo" />
                     )}
                     <h2>{student.name}</h2>
                   </article>
@@ -380,7 +382,7 @@ function App() {
             {selectedAlumni.photoUrl ? (
               <img src={selectedAlumni.photoUrl} alt={selectedAlumni.name} className="student-photo" />
             ) : (
-              <div className="student-photo-placeholder">Sense foto</div>
+              <img src={defaultAlumniPhoto} alt={`Foto predeterminada de ${selectedAlumni.name}`} className="student-photo" />
             )}
             <h2>{selectedAlumni.name}</h2>
             <section className="card-section" aria-label={`Contacte de ${selectedAlumni.name}`}>
@@ -430,6 +432,15 @@ function App() {
                   onClick={() => openRestaurantDetail(restaurant)}
                 >
                   <article className="restaurant-card">
+                    {restaurant.photoUrl ? (
+                      <img src={restaurant.photoUrl} alt={restaurant.name} className="restaurant-photo" />
+                    ) : (
+                      <img
+                        src={defaultRestaurantPhoto}
+                        alt={`Foto predeterminada de ${restaurant.name}`}
+                        className="restaurant-photo"
+                      />
+                    )}
                     <h2>{restaurant.name}</h2>
                   </article>
                 </button>
@@ -441,6 +452,15 @@ function App() {
         {!loading && !error && activeSection === 'restaurant-detail' && selectedRestaurant && (
           <article className="detail-card" aria-label={`Fitxa de ${selectedRestaurant.name}`}>
             <button type="button" className="back-button" onClick={openRestaurantsList}>← Tornar al llistat</button>
+            {selectedRestaurant.photoUrl ? (
+              <img src={selectedRestaurant.photoUrl} alt={selectedRestaurant.name} className="restaurant-photo" />
+            ) : (
+              <img
+                src={defaultRestaurantPhoto}
+                alt={`Foto predeterminada de ${selectedRestaurant.name}`}
+                className="restaurant-photo"
+              />
+            )}
             <h2>{selectedRestaurant.name}</h2>
 
             <section className="card-section" aria-label={`Ubicació de ${selectedRestaurant.name}`}>

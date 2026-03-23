@@ -265,6 +265,14 @@ body {
   color: #94a3b8;
 }
 
+.restaurant-photo {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: #1e293b;
+  display: block;
+}
+
 .student-card h2,
 .restaurant-card h2 {
   margin: 0;
