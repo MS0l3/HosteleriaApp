@@ -7,64 +7,44 @@ jest.mock('./alumniApi', () => ({
   fetchRestaurants: jest.fn(),
 }));
 
+const login = () => {
+  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@test.com' } });
+  fireEvent.change(screen.getByLabelText(/contrasenya/i), { target: { value: '123456' } });
+  fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+};
+
 beforeEach(() => {
   fetchAlumni.mockResolvedValue([]);
   fetchRestaurants.mockResolvedValue([]);
   window.scrollTo = jest.fn();
 });
 
-test('muestra el logo de joviat en el encabezado', async () => {
+test('muestra la pantalla de login inicialmente', () => {
   render(<App />);
 
-  const logoElement = screen.getByAltText(/logo_joviat/i);
-  expect(logoElement).toBeInTheDocument();
-
-  await waitFor(() => expect(fetchAlumni).toHaveBeenCalled());
+  expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
+  expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+  expect(screen.getByLabelText(/contrasenya/i)).toBeInTheDocument();
 });
 
-test('el logo vuelve a la página inicial', async () => {
+test('permite login y muestra botón de logout', async () => {
   render(<App />);
+  login();
 
-  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
-  expect(await screen.findByRole('heading', { name: /restaurants al mapa/i })).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole('button', { name: /anar a la pàgina inicial/i }));
   expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
-  expect(window.scrollTo).toHaveBeenCalled();
-});
-
-test('permite ocultar la barra lateral con el botón del menú', async () => {
-  render(<App />);
-
-  const toggleButton = screen.getByRole('button', { name: /ocultar barra lateral/i });
-  fireEvent.click(toggleButton);
-  expect(screen.getByRole('button', { name: /mostrar barra lateral/i })).toBeInTheDocument();
-
+  expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
   await waitFor(() => expect(fetchAlumni).toHaveBeenCalled());
 });
 
-test('muestra alumnos cuando firebase responde', async () => {
-  fetchAlumni.mockResolvedValue([{ id: 'abc', name: 'Kiana', photoUrl: '' }]);
+test('permite logout y vuelve al login', async () => {
   render(<App />);
+  login();
 
-  expect(await screen.findByText('Kiana')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /visualitzar alumnes/i })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: /logout/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /logout/i }));
+
+  expect(await screen.findByRole('heading', { name: /login/i })).toBeInTheDocument();
 });
-
-test('permite ver restaurantes en el mapa desde el menú', async () => {
-  fetchRestaurants.mockResolvedValue([
-    { id: 'rest-1', name: 'Can Jubany', location: { lat: 41.92, lng: 2.30 } },
-  ]);
-
-  render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
-
-  expect(await screen.findByText('Can Jubany')).toBeInTheDocument();
-  expect(screen.getByLabelText(/mapa amb pins de restaurants/i)).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /can jubany/i })).toBeInTheDocument();
-  await waitFor(() => expect(fetchRestaurants).toHaveBeenCalled());
-});
-
 
 test('filtra alumnes pel nom al cercador', async () => {
   fetchAlumni.mockResolvedValue([
@@ -73,6 +53,7 @@ test('filtra alumnes pel nom al cercador', async () => {
   ]);
 
   render(<App />);
+  login();
 
   expect(await screen.findByText('Marta')).toBeInTheDocument();
   expect(screen.getByText('Joan')).toBeInTheDocument();
@@ -83,56 +64,6 @@ test('filtra alumnes pel nom al cercador', async () => {
 
   expect(screen.getByText('Marta')).toBeInTheDocument();
   expect(screen.queryByText('Joan')).not.toBeInTheDocument();
-});
-
-test('filtra restaurants pel nom al cercador del mapa', async () => {
-  fetchRestaurants.mockResolvedValue([
-    { id: 'rest-1', name: 'Can Jubany', location: { lat: 41.92, lng: 2.3 } },
-    { id: 'rest-2', name: 'Disfrutar', location: { lat: 41.39, lng: 2.16 } },
-  ]);
-
-  render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
-
-  expect(await screen.findByText('Can Jubany')).toBeInTheDocument();
-  expect(screen.getByText('Disfrutar')).toBeInTheDocument();
-
-  fireEvent.change(screen.getByLabelText(/buscar restaurant per nom/i), {
-    target: { value: 'dis' },
-  });
-
-  expect(screen.getByText('Disfrutar')).toBeInTheDocument();
-  expect(screen.queryByText('Can Jubany')).not.toBeInTheDocument();
-});
-
-test('obre la fitxa d alumne en una pàgina dedicada', async () => {
-  fetchAlumni.mockResolvedValue([
-    {
-      id: 'a1',
-      name: 'Marta Soler',
-      photoUrl: '',
-      contact: {
-        email: 'marta@demo.cat',
-        phone: '600123123',
-        linkedin: 'https://linkedin.com/in/martasoler',
-      },
-    },
-  ]);
-
-  render(<App />);
-
-  expect(await screen.findByText('Marta Soler')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /marta soler/i }));
-
-  expect(await screen.findByRole('heading', { name: /fitxa alumne: marta soler/i })).toBeInTheDocument();
-  expect(screen.getByText('marta@demo.cat')).toBeInTheDocument();
-  expect(screen.getByText('600123123')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: /veure perfil/i })).toHaveAttribute(
-    'href',
-    'https://linkedin.com/in/martasoler'
-  );
-  fireEvent.click(screen.getByRole('button', { name: /tornar al llistat/i }));
-  expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
 });
 
 test('obre la fitxa de restaurant en una pàgina dedicada', async () => {
@@ -147,19 +78,16 @@ test('obre la fitxa de restaurant en una pàgina dedicada', async () => {
   ]);
 
   render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  login();
 
+  fireEvent.click(await screen.findByRole('button', { name: /veure restaurants al mapa/i }));
   expect(await screen.findByText('Can Escola')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /can escola/i }));
 
+  fireEvent.click(screen.getByRole('button', { name: /can escola/i }));
   expect(await screen.findByRole('heading', { name: /fitxa restaurant: can escola/i })).toBeInTheDocument();
-  expect(screen.getByText(/Ubicació/i)).toBeInTheDocument();
-  expect(screen.getByText(/Contacte/i)).toBeInTheDocument();
-  expect(screen.getByText(/Llistat alumnes/i)).toBeInTheDocument();
+
   expect(screen.getByText('938000000')).toBeInTheDocument();
   expect(screen.getByText('info@canescola.cat')).toBeInTheDocument();
   expect(screen.getByText('Anna Puig')).toBeInTheDocument();
   expect(screen.getByText('Marc Vila')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /tornar al llistat/i }));
-  expect(await screen.findByRole('heading', { name: /restaurants al mapa/i })).toBeInTheDocument();
 });

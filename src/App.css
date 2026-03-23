@@ -28,6 +28,16 @@ body {
   backdrop-filter: blur(8px);
 }
 
+.logout-button {
+  margin-left: auto;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  background: #1e293b;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
 .menu-button {
   width: 42px;
   height: 42px;
@@ -110,6 +120,48 @@ body {
   border: none;
   background-color: rgba(2, 6, 23, 0.5);
   z-index: 25;
+}
+
+.login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.login-card h1 {
+  margin-top: 0.8rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.login-form input {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.login-form button {
+  margin-top: 0.35rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  background: #1d4ed8;
+  color: #eff6ff;
+  cursor: pointer;
 }
 
 .content {

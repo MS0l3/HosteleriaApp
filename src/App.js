@@ -67,6 +67,10 @@ function loadLeaflet() {
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState('alumni');
   const [alumni, setAlumni] = useState([]);
@@ -100,6 +104,26 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleLogin = (event) => {
+    event.preventDefault();
+
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      setLoginError('Introdueix email i contrasenya.');
+      return;
+    }
+
+    setLoginError('');
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setLoginPassword('');
+    setActiveSection('alumni');
+    setSelectedAlumni(null);
+    setSelectedRestaurant(null);
+  };
+
   const toggleSidebar = () => {
     setSidebarOpen((prevOpen) => !prevOpen);
   };
@@ -129,6 +153,10 @@ function App() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     const loadSectionData = async () => {
       setLoading(true);
       setError('');
@@ -152,7 +180,7 @@ function App() {
     };
 
     loadSectionData();
-  }, [isAlumniSection, isRestaurantSection]);
+  }, [isAuthenticated, isAlumniSection, isRestaurantSection]);
 
   useEffect(() => {
     if (activeSection !== 'restaurants') {
@@ -222,6 +250,35 @@ function App() {
 
   return (
     <div className={`app-layout ${sidebarOpen ? 'sidebar-visible' : ''}`}>
+      {!isAuthenticated ? (
+        <main className="login-screen">
+          <section className="login-card" aria-label="Pantalla de login">
+            <img src={logoJoviat} className="header-logo" alt="logo_joviat" />
+            <h1>Login</h1>
+            <form onSubmit={handleLogin} className="login-form">
+              <label htmlFor="login-email">Email</label>
+              <input
+                id="login-email"
+                type="email"
+                value={loginEmail}
+                onChange={(event) => setLoginEmail(event.target.value)}
+                placeholder="exemple@email.com"
+              />
+              <label htmlFor="login-password">Contrasenya</label>
+              <input
+                id="login-password"
+                type="password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                placeholder="********"
+              />
+              {loginError && <p className="error-message">{loginError}</p>}
+              <button type="submit">Entrar</button>
+            </form>
+          </section>
+        </main>
+      ) : (
+        <>
       <header className="top-header">
         <button
           type="button"
@@ -235,6 +292,9 @@ function App() {
 
         <button type="button" className="logo-button" onClick={goHome} aria-label="Anar a la pàgina inicial">
           <img src={logoJoviat} className="header-logo" alt="logo_joviat" />
+        </button>
+        <button type="button" className="logout-button" onClick={handleLogout}>
+          Logout
         </button>
       </header>
 
@@ -410,6 +470,8 @@ function App() {
           </article>
         )}
       </main>
+        </>
+      )}
     </div>
   );
 }
