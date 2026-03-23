@@ -4,6 +4,7 @@ import { fetchAlumni, fetchRestaurants } from './alumniApi';
 import './App.css';
 
 let leafletLoader;
+const AUTH_STORAGE_KEY = 'hosteleriaapp-auth';
 
 function configureLeafletIcons(L) {
   L.Icon.Default.mergeOptions({
@@ -67,7 +68,13 @@ function loadLeaflet() {
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+  });
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -114,10 +121,12 @@ function App() {
 
     setLoginError('');
     setIsAuthenticated(true);
+    window.localStorage.setItem(AUTH_STORAGE_KEY, 'true');
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
     setLoginPassword('');
     setActiveSection('alumni');
     setSelectedAlumni(null);

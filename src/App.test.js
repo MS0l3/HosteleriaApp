@@ -17,6 +17,7 @@ beforeEach(() => {
   fetchAlumni.mockResolvedValue([]);
   fetchRestaurants.mockResolvedValue([]);
   window.scrollTo = jest.fn();
+  window.localStorage.clear();
 });
 
 test('muestra la pantalla de login inicialmente', () => {
@@ -33,6 +34,7 @@ test('permite login y muestra botón de logout', async () => {
 
   expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
+  expect(window.localStorage.getItem('hosteleriaapp-auth')).toBe('true');
   await waitFor(() => expect(fetchAlumni).toHaveBeenCalled());
 });
 
@@ -44,6 +46,15 @@ test('permite logout y vuelve al login', async () => {
   fireEvent.click(screen.getByRole('button', { name: /logout/i }));
 
   expect(await screen.findByRole('heading', { name: /login/i })).toBeInTheDocument();
+  expect(window.localStorage.getItem('hosteleriaapp-auth')).toBeNull();
+});
+
+test('mantiene sesión al refrescar si hay login guardado', async () => {
+  window.localStorage.setItem('hosteleriaapp-auth', 'true');
+  render(<App />);
+
+  expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
 });
 
 test('filtra alumnes pel nom al cercador', async () => {
