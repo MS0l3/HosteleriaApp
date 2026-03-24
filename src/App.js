@@ -741,6 +741,7 @@ function App() {
             <p className="admin-subtitle">Dona d'alta un restaurant nou i afegeix les dades de contacte i ubicacio.</p>
             <form className="admin-form" onSubmit={handleAddRestaurant}>
               <section className="primary-panel">
+                <h3>Informacio primaria</h3>
                 <label htmlFor="restaurant-name">Nom restaurant</label>
                 <input
                   id="restaurant-name"
@@ -776,6 +777,7 @@ function App() {
                   value={restaurantForm.photoUrl}
                   onChange={(event) => setRestaurantForm((prev) => ({ ...prev, photoUrl: event.target.value }))}
                 />
+                <h3>Ubicacio</h3>
                 <div className="admin-row">
                   <div>
                     <label htmlFor="restaurant-lat">Latitud</label>
