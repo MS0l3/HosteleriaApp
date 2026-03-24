@@ -121,6 +121,23 @@ async function fetchCollection(collectionName, errorMessage) {
   return data.documents ?? [];
 }
 
+async function createDocument(collectionName, fields, errorMessage) {
+  const endpoint = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collectionName}?key=${apiKey}`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ fields }),
+  });
+
+  if (!response.ok) {
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
 export async function fetchAlumni() {
   const documents = await fetchCollection('Alumni', 'No se pudo cargar Alumni desde Firebase.');
   return documents.map(toPlainAlumni);
@@ -129,4 +146,52 @@ export async function fetchAlumni() {
 export async function fetchRestaurants() {
   const documents = await fetchCollection('Restaurant', 'No se pudo cargar Restaurant desde Firebase.');
   return documents.map(toPlainRestaurant);
+}
+
+export async function isAdministrator(email) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return false;
+  }
+
+  const documents = await fetchCollection('Administrator', 'No se pudo cargar Administrator desde Firebase.');
+  return documents.some((doc) => {
+    const fields = doc.fields ?? {};
+    const adminEmail = getStringField(fields, ['Email', 'Mail', 'email']).toLowerCase();
+    return adminEmail === normalizedEmail;
+  });
+}
+
+export async function addAlumni(alumniData) {
+  const fields = {
+    Name: { stringValue: alumniData.name ?? '' },
+    Email: { stringValue: alumniData.email ?? '' },
+    Phone: { stringValue: alumniData.phone ?? '' },
+    LinkedIn: { stringValue: alumniData.linkedin ?? '' },
+    PhotoURL: { stringValue: alumniData.photoUrl ?? '' },
+  };
+
+  return createDocument('Alumni', fields, 'No se pudo guardar el alumno.');
+}
+
+export async function addRestaurant(restaurantData) {
+  const fields = {
+    Name: { stringValue: restaurantData.name ?? '' },
+    Email: { stringValue: restaurantData.email ?? '' },
+    Phone: { stringValue: restaurantData.phone ?? '' },
+    PhotoURL: { stringValue: restaurantData.photoUrl ?? '' },
+  };
+
+  const parsedLat = Number.parseFloat(restaurantData.lat);
+  const parsedLng = Number.parseFloat(restaurantData.lng);
+  if (!Number.isNaN(parsedLat) && !Number.isNaN(parsedLng)) {
+    fields.Location = {
+      geoPointValue: {
+        latitude: parsedLat,
+        longitude: parsedLng,
+      },
+    };
+  }
+
+  return createDocument('Restaurant', fields, 'No se pudo guardar el restaurant.');
 }

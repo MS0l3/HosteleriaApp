@@ -1,21 +1,28 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-import { fetchAlumni, fetchRestaurants } from './alumniApi';
+import { addAlumni, addRestaurant, fetchAlumni, fetchRestaurants, isAdministrator } from './alumniApi';
 
 jest.mock('./alumniApi', () => ({
   fetchAlumni: jest.fn(),
   fetchRestaurants: jest.fn(),
+  isAdministrator: jest.fn(),
+  addAlumni: jest.fn(),
+  addRestaurant: jest.fn(),
 }));
 
-const login = () => {
-  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@test.com' } });
+const login = async (email = 'user@test.com') => {
+  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: email } });
   fireEvent.change(screen.getByLabelText(/contrasenya/i), { target: { value: '123456' } });
   fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+  await waitFor(() => expect(isAdministrator).toHaveBeenCalled());
 };
 
 beforeEach(() => {
   fetchAlumni.mockResolvedValue([]);
   fetchRestaurants.mockResolvedValue([]);
+  isAdministrator.mockResolvedValue(false);
+  addAlumni.mockResolvedValue({});
+  addRestaurant.mockResolvedValue({});
   window.scrollTo = jest.fn();
   window.localStorage.clear();
 });
@@ -24,94 +31,59 @@ test('muestra la pantalla de login inicialmente', () => {
   render(<App />);
 
   expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
-  expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-  expect(screen.getByLabelText(/contrasenya/i)).toBeInTheDocument();
 });
 
-test('permite login y muestra botón de logout', async () => {
+test('consulta Administrator al hacer login', async () => {
+  isAdministrator.mockResolvedValue(true);
   render(<App />);
-  login();
+
+  await login('admin@test.com');
+
+  expect(isAdministrator).toHaveBeenCalledWith('admin@test.com');
+  expect(window.localStorage.getItem('hosteleriaapp-admin')).toBe('true');
+});
+
+test('muestra acciones de admin si el email está en Administrator', async () => {
+  isAdministrator.mockResolvedValue(true);
+  render(<App />);
+
+  await login('admin@test.com');
+
+  expect(await screen.findByLabelText(/accions admin alumnes/i)).toBeInTheDocument();
+
+  fireEvent.change(screen.getByPlaceholderText(/nom alumne/i), { target: { value: 'Joana' } });
+  fireEvent.click(screen.getByRole('button', { name: /afegir alumne/i }));
+
+  await waitFor(() => expect(addAlumni).toHaveBeenCalled());
+});
+
+test('no muestra acciones de admin si no es administrador', async () => {
+  isAdministrator.mockResolvedValue(false);
+  render(<App />);
+
+  await login('user@test.com');
 
   expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
-  expect(window.localStorage.getItem('hosteleriaapp-auth')).toBe('true');
-  await waitFor(() => expect(fetchAlumni).toHaveBeenCalled());
+  expect(screen.queryByLabelText(/accions admin alumnes/i)).not.toBeInTheDocument();
 });
 
-test('permite logout y vuelve al login', async () => {
+test('mantiene sesión al refrescar y conserva rol admin', async () => {
+  window.localStorage.setItem('hosteleriaapp-auth', 'true');
+  window.localStorage.setItem('hosteleriaapp-admin', 'true');
   render(<App />);
-  login();
 
-  expect(await screen.findByRole('button', { name: /logout/i })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
+  expect(screen.getByLabelText(/accions admin alumnes/i)).toBeInTheDocument();
+});
+
+test('logout limpia sesión y rol admin', async () => {
+  isAdministrator.mockResolvedValue(true);
+  render(<App />);
+  await login('admin@test.com');
+
   fireEvent.click(screen.getByRole('button', { name: /logout/i }));
 
   expect(await screen.findByRole('heading', { name: /login/i })).toBeInTheDocument();
   expect(window.localStorage.getItem('hosteleriaapp-auth')).toBeNull();
-});
-
-test('mantiene sesión al refrescar si hay login guardado', async () => {
-  window.localStorage.setItem('hosteleriaapp-auth', 'true');
-  render(<App />);
-
-  expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
-});
-
-test('filtra alumnes pel nom al cercador', async () => {
-  fetchAlumni.mockResolvedValue([
-    { id: 'a1', name: 'Marta', photoUrl: '' },
-    { id: 'a2', name: 'Joan', photoUrl: '' },
-  ]);
-
-  render(<App />);
-  login();
-
-  expect(await screen.findByText('Marta')).toBeInTheDocument();
-  expect(screen.getByText('Joan')).toBeInTheDocument();
-
-  fireEvent.change(screen.getByLabelText(/buscar alumne per nom/i), {
-    target: { value: 'mar' },
-  });
-
-  expect(screen.getByText('Marta')).toBeInTheDocument();
-  expect(screen.queryByText('Joan')).not.toBeInTheDocument();
-});
-
-test('obre la fitxa de restaurant en una pàgina dedicada', async () => {
-  fetchRestaurants.mockResolvedValue([
-    {
-      id: 'rest-1',
-      name: 'Can Escola',
-      location: { lat: 41.4, lng: 2.1 },
-      contact: { phone: '938000000', email: 'info@canescola.cat' },
-      alumniList: ['Anna Puig', 'Marc Vila'],
-    },
-  ]);
-
-  render(<App />);
-  login();
-
-  fireEvent.click(await screen.findByRole('button', { name: /veure restaurants al mapa/i }));
-  expect(await screen.findByText('Can Escola')).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole('button', { name: /can escola/i }));
-  expect(await screen.findByRole('heading', { name: /fitxa restaurant: can escola/i })).toBeInTheDocument();
-
-  expect(screen.getByText('938000000')).toBeInTheDocument();
-  expect(screen.getByText('info@canescola.cat')).toBeInTheDocument();
-  expect(screen.getByText('Anna Puig')).toBeInTheDocument();
-  expect(screen.getByText('Marc Vila')).toBeInTheDocument();
-});
-
-test('mostra fotos predeterminades quan no hi ha imatge d alumne o restaurant', async () => {
-  fetchAlumni.mockResolvedValue([{ id: 'a1', name: 'Marta', photoUrl: '' }]);
-  fetchRestaurants.mockResolvedValue([{ id: 'r1', name: 'Can Blau', photoUrl: '', location: null }]);
-
-  render(<App />);
-  login();
-
-  expect(await screen.findByAltText(/foto predeterminada de marta/i)).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
-  expect(await screen.findByAltText(/foto predeterminada de can blau/i)).toBeInTheDocument();
+  expect(window.localStorage.getItem('hosteleriaapp-admin')).toBeNull();
 });

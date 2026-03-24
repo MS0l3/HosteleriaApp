@@ -181,12 +181,52 @@ body {
   color: #fecaca;
 }
 
+.info-message {
+  color: #bbf7d0;
+}
+
 
 .search-label {
   display: inline-block;
   margin-bottom: 0.4rem;
   color: #cbd5e1;
   font-weight: 600;
+}
+
+.admin-panel {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.admin-panel h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.admin-form {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-form input {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  background: #111827;
+  color: #f8fafc;
+}
+
+.admin-form button {
+  justify-self: start;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  background: #14532d;
+  color: #f0fdf4;
+  cursor: pointer;
 }
 
 .search-input {

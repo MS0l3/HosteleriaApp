@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import logoJoviat from './logo_joviat.webp';
 import defaultAlumniPhoto from './default_alumni.svg';
 import defaultRestaurantPhoto from './default_restaurant.svg';
-import { fetchAlumni, fetchRestaurants } from './alumniApi';
+import { addAlumni, addRestaurant, fetchAlumni, fetchRestaurants, isAdministrator } from './alumniApi';
 import './App.css';
 
 let leafletLoader;
 const AUTH_STORAGE_KEY = 'hosteleriaapp-auth';
+const ADMIN_STORAGE_KEY = 'hosteleriaapp-admin';
+const LOGIN_EMAIL_KEY = 'hosteleriaapp-email';
 
 function configureLeafletIcons(L) {
   L.Icon.Default.mergeOptions({
@@ -80,6 +82,14 @@ function App() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem(ADMIN_STORAGE_KEY) === 'true';
+  });
+  const [loginLoading, setLoginLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState('alumni');
   const [alumni, setAlumni] = useState([]);
@@ -91,6 +101,22 @@ function App() {
   const [mapError, setMapError] = useState('');
   const [alumniSearch, setAlumniSearch] = useState('');
   const [restaurantSearch, setRestaurantSearch] = useState('');
+  const [adminMessage, setAdminMessage] = useState('');
+  const [alumniForm, setAlumniForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    linkedin: '',
+    photoUrl: '',
+  });
+  const [restaurantForm, setRestaurantForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    photoUrl: '',
+    lat: '',
+    lng: '',
+  });
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
@@ -113,7 +139,7 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
 
     if (!loginEmail.trim() || !loginPassword.trim()) {
@@ -121,18 +147,63 @@ function App() {
       return;
     }
 
-    setLoginError('');
-    setIsAuthenticated(true);
-    window.localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+    setLoginLoading(true);
+
+    try {
+      const admin = await isAdministrator(loginEmail);
+      setLoginError('');
+      setIsAuthenticated(true);
+      setIsAdmin(admin);
+      window.localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+      window.localStorage.setItem(ADMIN_STORAGE_KEY, admin ? 'true' : 'false');
+      window.localStorage.setItem(LOGIN_EMAIL_KEY, loginEmail.trim());
+    } catch (authError) {
+      setLoginError(authError.message);
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setIsAdmin(false);
     window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.localStorage.removeItem(ADMIN_STORAGE_KEY);
+    window.localStorage.removeItem(LOGIN_EMAIL_KEY);
     setLoginPassword('');
     setActiveSection('alumni');
     setSelectedAlumni(null);
     setSelectedRestaurant(null);
+  };
+
+  const handleAddAlumni = async (event) => {
+    event.preventDefault();
+    setAdminMessage('');
+
+    try {
+      await addAlumni(alumniForm);
+      const result = await fetchAlumni();
+      setAlumni(result);
+      setAlumniForm({ name: '', email: '', phone: '', linkedin: '', photoUrl: '' });
+      setAdminMessage('Alumne afegit correctament.');
+    } catch (saveError) {
+      setAdminMessage(saveError.message);
+    }
+  };
+
+  const handleAddRestaurant = async (event) => {
+    event.preventDefault();
+    setAdminMessage('');
+
+    try {
+      await addRestaurant(restaurantForm);
+      const result = await fetchRestaurants();
+      setRestaurants(result);
+      setRestaurantForm({ name: '', email: '', phone: '', photoUrl: '', lat: '', lng: '' });
+      setAdminMessage('Restaurant afegit correctament.');
+    } catch (saveError) {
+      setAdminMessage(saveError.message);
+    }
   };
 
   const toggleSidebar = () => {
@@ -284,7 +355,9 @@ function App() {
                 placeholder="********"
               />
               {loginError && <p className="error-message">{loginError}</p>}
-              <button type="submit">Entrar</button>
+              <button type="submit" disabled={loginLoading}>
+                {loginLoading ? 'Comprovant...' : 'Entrar'}
+              </button>
             </form>
           </section>
         </main>
@@ -349,6 +422,40 @@ function App() {
 
         {!loading && !error && activeSection === 'alumni' && (
           <>
+            {isAdmin && (
+              <section className="admin-panel" aria-label="Accions admin alumnes">
+                <h2>Accions administrador</h2>
+                <form className="admin-form" onSubmit={handleAddAlumni}>
+                  <input
+                    placeholder="Nom alumne"
+                    value={alumniForm.name}
+                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, name: event.target.value }))}
+                    required
+                  />
+                  <input
+                    placeholder="Email"
+                    value={alumniForm.email}
+                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, email: event.target.value }))}
+                  />
+                  <input
+                    placeholder="Phone"
+                    value={alumniForm.phone}
+                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, phone: event.target.value }))}
+                  />
+                  <input
+                    placeholder="LinkedIn"
+                    value={alumniForm.linkedin}
+                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, linkedin: event.target.value }))}
+                  />
+                  <input
+                    placeholder="Photo URL"
+                    value={alumniForm.photoUrl}
+                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, photoUrl: event.target.value }))}
+                  />
+                  <button type="submit">Afegir alumne</button>
+                </form>
+              </section>
+            )}
             <label className="search-label" htmlFor="alumni-search">Buscar alumne per nom</label>
             <input
               id="alumni-search"
@@ -407,6 +514,45 @@ function App() {
 
         {!loading && !error && activeSection === 'restaurants' && (
           <>
+            {isAdmin && (
+              <section className="admin-panel" aria-label="Accions admin restaurants">
+                <h2>Accions administrador</h2>
+                <form className="admin-form" onSubmit={handleAddRestaurant}>
+                  <input
+                    placeholder="Nom restaurant"
+                    value={restaurantForm.name}
+                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, name: event.target.value }))}
+                    required
+                  />
+                  <input
+                    placeholder="Email"
+                    value={restaurantForm.email}
+                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, email: event.target.value }))}
+                  />
+                  <input
+                    placeholder="Phone"
+                    value={restaurantForm.phone}
+                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, phone: event.target.value }))}
+                  />
+                  <input
+                    placeholder="Photo URL"
+                    value={restaurantForm.photoUrl}
+                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, photoUrl: event.target.value }))}
+                  />
+                  <input
+                    placeholder="Latitud"
+                    value={restaurantForm.lat}
+                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lat: event.target.value }))}
+                  />
+                  <input
+                    placeholder="Longitud"
+                    value={restaurantForm.lng}
+                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lng: event.target.value }))}
+                  />
+                  <button type="submit">Afegir restaurant</button>
+                </form>
+              </section>
+            )}
             <label className="search-label" htmlFor="restaurant-search">Buscar restaurant per nom</label>
             <input
               id="restaurant-search"
@@ -498,6 +644,7 @@ function App() {
             </section>
           </article>
         )}
+        {adminMessage && <p className="info-message">{adminMessage}</p>}
       </main>
         </>
       )}
