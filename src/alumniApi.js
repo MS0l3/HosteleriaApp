@@ -11,6 +11,8 @@ const getStringField = (fields, candidates, fallback = '') => {
   return match ?? fallback;
 };
 
+const getDocumentId = (doc) => doc.name?.split('/').pop() ?? '';
+
 const parseStringList = (arrayField) => {
   const values = arrayField?.arrayValue?.values;
   if (!Array.isArray(values)) {
@@ -32,11 +34,36 @@ const parseStringList = (arrayField) => {
     .filter(Boolean);
 };
 
+const getRelationBoolean = (fields, candidates, fallback = false) => {
+  for (const candidate of candidates) {
+    const field = fields?.[candidate];
+    if (!field) {
+      continue;
+    }
+
+    if (typeof field.booleanValue === 'boolean') {
+      return field.booleanValue;
+    }
+
+    if (typeof field.stringValue === 'string') {
+      const normalized = field.stringValue.trim().toLowerCase();
+      if (normalized === 'true') {
+        return true;
+      }
+      if (normalized === 'false') {
+        return false;
+      }
+    }
+  }
+
+  return fallback;
+};
+
 const toPlainAlumni = (doc) => {
   const fields = doc.fields ?? {};
 
   return {
-    id: doc.name?.split('/').pop() ?? '',
+    id: getDocumentId(doc),
     name: getStringField(fields, ['Name', 'Nom'], 'Sense nom'),
     photoUrl: getStringField(fields, ['PhotoURL', 'Photo', 'Image']),
     contact: {
@@ -97,7 +124,7 @@ const toPlainRestaurant = (doc) => {
     .concat(parseStringList(fields.Students));
 
   return {
-    id: doc.name?.split('/').pop() ?? '',
+    id: getDocumentId(doc),
     name: getStringField(fields, ['Name', 'Nom'], 'Restaurant sense nom'),
     photoUrl: getStringField(fields, ['PhotoURL', 'Photo', 'Image']),
     location,
@@ -120,6 +147,18 @@ async function fetchCollection(collectionName, errorMessage) {
   const data = await response.json();
   return data.documents ?? [];
 }
+
+const toPlainRelation = (doc) => {
+  const fields = doc.fields ?? {};
+
+  return {
+    id: getDocumentId(doc),
+    alumniId: getStringField(fields, ['id_alumni', 'alumni_id', 'AlumniId', 'AlumneId', 'StudentId']),
+    restaurantId: getStringField(fields, ['id_restaurant', 'restaurant_id', 'RestaurantId']),
+    role: getStringField(fields, ['rol', 'role', 'Role']),
+    currentJob: getRelationBoolean(fields, ['current_job', 'CurrentJob', 'current', 'Current']),
+  };
+};
 
 async function createDocument(collectionName, fields, errorMessage) {
   const endpoint = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collectionName}?key=${apiKey}`;
@@ -144,8 +183,46 @@ export async function fetchAlumni() {
 }
 
 export async function fetchRestaurants() {
-  const documents = await fetchCollection('Restaurant', 'No se pudo cargar Restaurant desde Firebase.');
-  return documents.map(toPlainRestaurant);
+  const [restaurantDocs, relationDocs, alumniDocs] = await Promise.all([
+    fetchCollection('Restaurant', 'No se pudo cargar Restaurant desde Firebase.'),
+    fetchCollection('Rest-Alum', 'No se pudo cargar Rest-Alum desde Firebase.').catch(() => []),
+    fetchCollection('Alumni', 'No se pudo cargar Alumni desde Firebase.').catch(() => []),
+  ]);
+
+  const alumniById = new Map(
+    alumniDocs
+      .map(toPlainAlumni)
+      .map((student) => [student.id, student.name])
+  );
+
+  const relationsByRestaurantId = relationDocs
+    .map(toPlainRelation)
+    .reduce((accumulator, relation) => {
+      if (!relation.restaurantId || !relation.alumniId) {
+        return accumulator;
+      }
+
+      const relationName = alumniById.get(relation.alumniId);
+      if (!relationName) {
+        return accumulator;
+      }
+
+      const existing = accumulator.get(relation.restaurantId) ?? [];
+      existing.push(relationName);
+      accumulator.set(relation.restaurantId, existing);
+      return accumulator;
+    }, new Map());
+
+  return restaurantDocs.map((doc) => {
+    const restaurant = toPlainRestaurant(doc);
+    const relatedAlumni = relationsByRestaurantId.get(restaurant.id) ?? [];
+    const mergedAlumni = Array.from(new Set([...restaurant.alumniList, ...relatedAlumni]));
+
+    return {
+      ...restaurant,
+      alumniList: mergedAlumni,
+    };
+  });
 }
 
 export async function isAdministrator(email) {
@@ -172,10 +249,14 @@ export async function addAlumni(alumniData) {
     Status: { stringValue: alumniData.status ?? '' },
   };
 
-  if (Array.isArray(alumniData.experiences)) {
+  const normalizedExperiences = Array.isArray(alumniData.experiences)
+    ? alumniData.experiences.filter((experience) => experience?.restaurantId)
+    : [];
+
+  if (normalizedExperiences.length) {
     fields.Restaurants = {
       arrayValue: {
-        values: alumniData.experiences.map((experience) => ({
+        values: normalizedExperiences.map((experience) => ({
           mapValue: {
             fields: {
               RestaurantId: { stringValue: experience.restaurantId ?? '' },
@@ -188,7 +269,27 @@ export async function addAlumni(alumniData) {
     };
   }
 
-  return createDocument('Alumni', fields, 'No se pudo guardar el alumno.');
+  const createdAlumni = await createDocument('Alumni', fields, 'No se pudo guardar el alumno.');
+  const alumniId = getDocumentId(createdAlumni);
+
+  if (alumniId && normalizedExperiences.length) {
+    await Promise.all(
+      normalizedExperiences.map((experience) =>
+        createDocument(
+          'Rest-Alum',
+          {
+            id_alumni: { stringValue: alumniId },
+            id_restaurant: { stringValue: experience.restaurantId ?? '' },
+            rol: { stringValue: experience.role ?? '' },
+            current_job: { stringValue: experience.current ? 'true' : 'false' },
+          },
+          'No se pudo guardar la relacio entre alumne i restaurant.'
+        )
+      )
+    );
+  }
+
+  return createdAlumni;
 }
 
 export async function addRestaurant(restaurantData) {
