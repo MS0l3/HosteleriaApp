@@ -133,7 +133,7 @@ function App() {
     restaurant.name.toLowerCase().includes(normalizedRestaurantSearch)
   );
   const isAlumniSection = activeSection === 'alumni' || activeSection === 'alumni-detail' || activeSection === 'add-alumni';
-  const isRestaurantSection = activeSection === 'restaurants' || activeSection === 'restaurant-detail';
+  const isRestaurantSection = activeSection === 'restaurants' || activeSection === 'restaurant-detail' || activeSection === 'add-restaurant';
 
   const goHome = () => {
     setActiveSection('alumni');
@@ -241,6 +241,13 @@ function App() {
   const openRestaurantsList = () => {
     setSelectedRestaurant(null);
     setActiveSection('restaurants');
+  };
+
+  const openAddRestaurant = () => {
+    if (!isAdmin) {
+      return;
+    }
+    setActiveSection('add-restaurant');
   };
 
   const openAlumniDetail = (student) => {
@@ -467,6 +474,7 @@ function App() {
           {activeSection === 'add-alumni' && 'Afegir alumne'}
           {activeSection === 'alumni-detail' && `Fitxa alumne: ${selectedAlumni?.name ?? ''}`}
           {activeSection === 'restaurants' && 'Restaurants al mapa'}
+          {activeSection === 'add-restaurant' && 'Afegir restaurant'}
           {activeSection === 'restaurant-detail' && `Fitxa restaurant: ${selectedRestaurant?.name ?? ''}`}
         </h1>
 
@@ -677,45 +685,13 @@ function App() {
 
         {!loading && !error && activeSection === 'restaurants' && (
           <>
-            {isAdmin && (
-              <section className="admin-panel" aria-label="Accions admin restaurants">
-                <h2>Accions administrador</h2>
-                <form className="admin-form" onSubmit={handleAddRestaurant}>
-                  <input
-                    placeholder="Nom restaurant"
-                    value={restaurantForm.name}
-                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, name: event.target.value }))}
-                    required
-                  />
-                  <input
-                    placeholder="Email"
-                    value={restaurantForm.email}
-                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, email: event.target.value }))}
-                  />
-                  <input
-                    placeholder="Phone"
-                    value={restaurantForm.phone}
-                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, phone: event.target.value }))}
-                  />
-                  <input
-                    placeholder="Photo URL"
-                    value={restaurantForm.photoUrl}
-                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, photoUrl: event.target.value }))}
-                  />
-                  <input
-                    placeholder="Latitud"
-                    value={restaurantForm.lat}
-                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lat: event.target.value }))}
-                  />
-                  <input
-                    placeholder="Longitud"
-                    value={restaurantForm.lng}
-                    onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lng: event.target.value }))}
-                  />
-                  <button type="submit">Afegir restaurant</button>
-                </form>
-              </section>
-            )}
+            <div className="alumni-toolbar">
+              {isAdmin && (
+                <button type="button" className="open-admin-button" onClick={openAddRestaurant}>
+                  Afegir restaurant
+                </button>
+              )}
+            </div>
             <label className="search-label" htmlFor="restaurant-search">Buscar restaurant per nom</label>
             <input
               id="restaurant-search"
@@ -756,6 +732,74 @@ function App() {
               ))}
             </section>
           </>
+        )}
+
+        {!loading && !error && activeSection === 'add-restaurant' && isAdmin && (
+          <section className="admin-panel" aria-label="Accions admin restaurants">
+            <p className="admin-eyebrow">ADMINISTRACIO</p>
+            <h2>Afegir Restaurant</h2>
+            <p className="admin-subtitle">Dona d'alta un restaurant nou i afegeix les dades de contacte i ubicacio.</p>
+            <form className="admin-form" onSubmit={handleAddRestaurant}>
+              <section className="primary-panel">
+                <label htmlFor="restaurant-name">Nom restaurant</label>
+                <input
+                  id="restaurant-name"
+                  placeholder="Ex. Can Jubany"
+                  value={restaurantForm.name}
+                  onChange={(event) => setRestaurantForm((prev) => ({ ...prev, name: event.target.value }))}
+                  required
+                />
+                <div className="admin-row">
+                  <div>
+                    <label htmlFor="restaurant-email">Email</label>
+                    <input
+                      id="restaurant-email"
+                      placeholder="info@restaurant.cat"
+                      value={restaurantForm.email}
+                      onChange={(event) => setRestaurantForm((prev) => ({ ...prev, email: event.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="restaurant-phone">Phone</label>
+                    <input
+                      id="restaurant-phone"
+                      placeholder="+34 900 000 000"
+                      value={restaurantForm.phone}
+                      onChange={(event) => setRestaurantForm((prev) => ({ ...prev, phone: event.target.value }))}
+                    />
+                  </div>
+                </div>
+                <label htmlFor="restaurant-photo">Photo URL</label>
+                <input
+                  id="restaurant-photo"
+                  placeholder="https://..."
+                  value={restaurantForm.photoUrl}
+                  onChange={(event) => setRestaurantForm((prev) => ({ ...prev, photoUrl: event.target.value }))}
+                />
+                <div className="admin-row">
+                  <div>
+                    <label htmlFor="restaurant-lat">Latitud</label>
+                    <input
+                      id="restaurant-lat"
+                      placeholder="41.39"
+                      value={restaurantForm.lat}
+                      onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lat: event.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="restaurant-lng">Longitud</label>
+                    <input
+                      id="restaurant-lng"
+                      placeholder="2.16"
+                      value={restaurantForm.lng}
+                      onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lng: event.target.value }))}
+                    />
+                  </div>
+                </div>
+              </section>
+              <button type="submit">Desar restaurant</button>
+            </form>
+          </section>
         )}
 
         {!loading && !error && activeSection === 'restaurant-detail' && selectedRestaurant && (

@@ -59,6 +59,18 @@ test('muestra acciones de admin si el email está en Administrator', async () =>
   await waitFor(() => expect(addAlumni).toHaveBeenCalled());
 });
 
+test('muestra botón de afegir restaurant solo para admin y abre la fitxa', async () => {
+  isAdministrator.mockResolvedValue(true);
+  render(<App />);
+
+  await login('admin@test.com');
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+
+  expect(await screen.findByRole('button', { name: /afegir restaurant/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /afegir restaurant/i }));
+  expect(await screen.findByLabelText(/accions admin restaurants/i)).toBeInTheDocument();
+});
+
 test('no muestra acciones de admin si no es administrador', async () => {
   isAdministrator.mockResolvedValue(false);
   render(<App />);
@@ -68,6 +80,8 @@ test('no muestra acciones de admin si no es administrador', async () => {
   expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
   expect(screen.queryByLabelText(/accions admin alumnes/i)).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /afegir alumne/i })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  expect(screen.queryByRole('button', { name: /afegir restaurant/i })).not.toBeInTheDocument();
 });
 
 test('mantiene sesión al refrescar y conserva rol admin', async () => {
