@@ -211,16 +211,16 @@ body {
 .admin-panel {
   margin-bottom: 1rem;
   padding: 0.75rem;
-  border: 1px solid #d6d0b0;
+  border: 1px solid #334155;
   border-radius: 10px;
-  background: #e7e3d1;
+  background: #0f172a;
 }
 
 .admin-panel h2 {
   margin-top: 0;
   margin-bottom: 0.5rem;
   font-size: 2rem;
-  color: #111827;
+  color: #f8fafc;
 }
 
 .admin-eyebrow {
@@ -229,13 +229,13 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.22em;
   font-weight: 800;
-  color: #6b4f2f;
+  color: #93c5fd;
 }
 
 .admin-subtitle {
   margin-top: 0;
   margin-bottom: 1rem;
-  color: #5b5b54;
+  color: #cbd5e1;
 }
 
 .admin-form {
@@ -253,8 +253,8 @@ body {
 .primary-panel,
 .trajectory-panel,
 .experience-card {
-  background: #ece9d3;
-  border: 1px solid #d6d0b0;
+  background: #111827;
+  border: 1px solid #334155;
   border-radius: 20px;
   padding: 1rem;
 }
@@ -264,11 +264,11 @@ body {
   height: 160px;
   margin: 0 auto 0.75rem;
   border-radius: 999px;
-  border: 2px dashed #d0bfa2;
+  border: 2px dashed #334155;
   display: grid;
   place-items: center;
   font-size: 2rem;
-  color: #8b7355;
+  color: #94a3b8;
   cursor: pointer;
 }
 
@@ -283,7 +283,7 @@ body {
 .upload-help {
   margin-top: 0.2rem;
   text-align: center;
-  color: #7c7460;
+  color: #94a3b8;
   font-size: 0.9rem;
 }
 
@@ -317,7 +317,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #444;
+  color: #cbd5e1;
 }
 
 .admin-form input {
