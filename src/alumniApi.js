@@ -169,7 +169,24 @@ export async function addAlumni(alumniData) {
     Phone: { stringValue: alumniData.phone ?? '' },
     LinkedIn: { stringValue: alumniData.linkedin ?? '' },
     PhotoURL: { stringValue: alumniData.photoUrl ?? '' },
+    Status: { stringValue: alumniData.status ?? '' },
   };
+
+  if (Array.isArray(alumniData.experiences)) {
+    fields.Restaurants = {
+      arrayValue: {
+        values: alumniData.experiences.map((experience) => ({
+          mapValue: {
+            fields: {
+              RestaurantId: { stringValue: experience.restaurantId ?? '' },
+              Role: { stringValue: experience.role ?? '' },
+              Current: { booleanValue: Boolean(experience.current) },
+            },
+          },
+        })),
+      },
+    };
+  }
 
   return createDocument('Alumni', fields, 'No se pudo guardar el alumno.');
 }

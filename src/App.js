@@ -108,6 +108,9 @@ function App() {
     phone: '',
     linkedin: '',
     photoUrl: '',
+    status: 'Alumni (En actiu)',
+    restaurantFilter: '',
+    experiences: [{ restaurantId: '', role: '', current: true }],
   });
   const [restaurantForm, setRestaurantForm] = useState({
     name: '',
@@ -184,7 +187,16 @@ function App() {
       await addAlumni(alumniForm);
       const result = await fetchAlumni();
       setAlumni(result);
-      setAlumniForm({ name: '', email: '', phone: '', linkedin: '', photoUrl: '' });
+      setAlumniForm({
+        name: '',
+        email: '',
+        phone: '',
+        linkedin: '',
+        photoUrl: '',
+        status: 'Alumni (En actiu)',
+        restaurantFilter: '',
+        experiences: [{ restaurantId: '', role: '', current: true }],
+      });
       setAdminMessage('Alumne afegit correctament.');
     } catch (saveError) {
       setAdminMessage(saveError.message);
@@ -234,6 +246,29 @@ function App() {
     setActiveSection('restaurant-detail');
   };
 
+  const updateExperience = (index, key, value) => {
+    setAlumniForm((prev) => ({
+      ...prev,
+      experiences: prev.experiences.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [key]: value } : item
+      ),
+    }));
+  };
+
+  const addExperience = () => {
+    setAlumniForm((prev) => ({
+      ...prev,
+      experiences: [...prev.experiences, { restaurantId: '', role: '', current: true }],
+    }));
+  };
+
+  const removeExperience = (index) => {
+    setAlumniForm((prev) => ({
+      ...prev,
+      experiences: prev.experiences.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       return;
@@ -263,6 +298,16 @@ function App() {
 
     loadSectionData();
   }, [isAuthenticated, isAlumniSection, isRestaurantSection]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin || restaurants.length) {
+      return;
+    }
+
+    fetchRestaurants()
+      .then((result) => setRestaurants(result))
+      .catch(() => {});
+  }, [isAuthenticated, isAdmin, restaurants.length]);
 
   useEffect(() => {
     if (activeSection !== 'restaurants') {
@@ -424,35 +469,137 @@ function App() {
           <>
             {isAdmin && (
               <section className="admin-panel" aria-label="Accions admin alumnes">
-                <h2>Accions administrador</h2>
+                <p className="admin-eyebrow">ADMINISTRACIO</p>
+                <h2>Afegir Alumne</h2>
+                <p className="admin-subtitle">
+                  Dona d'alta un alumne nou, desa la seva foto i relaciona'l amb tants restaurants com calgui.
+                </p>
                 <form className="admin-form" onSubmit={handleAddAlumni}>
-                  <input
-                    placeholder="Nom alumne"
-                    value={alumniForm.name}
-                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, name: event.target.value }))}
-                    required
-                  />
-                  <input
-                    placeholder="Email"
-                    value={alumniForm.email}
-                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, email: event.target.value }))}
-                  />
-                  <input
-                    placeholder="Phone"
-                    value={alumniForm.phone}
-                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, phone: event.target.value }))}
-                  />
-                  <input
-                    placeholder="LinkedIn"
-                    value={alumniForm.linkedin}
-                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, linkedin: event.target.value }))}
-                  />
-                  <input
-                    placeholder="Photo URL"
-                    value={alumniForm.photoUrl}
-                    onChange={(event) => setAlumniForm((prev) => ({ ...prev, photoUrl: event.target.value }))}
-                  />
-                  <button type="submit">Afegir alumne</button>
+                  <div className="admin-grid">
+                    <section className="photo-panel">
+                      <label htmlFor="alumni-photo-url" className="upload-avatar">
+                        +
+                      </label>
+                      <p className="upload-title">Pujar foto</p>
+                      <p className="upload-help">Enganxa una URL de la imatge</p>
+                      <input
+                        id="alumni-photo-url"
+                        placeholder="https://..."
+                        value={alumniForm.photoUrl}
+                        onChange={(event) => setAlumniForm((prev) => ({ ...prev, photoUrl: event.target.value }))}
+                      />
+                      <label htmlFor="alumni-status">Estat de l'alumne</label>
+                      <select
+                        id="alumni-status"
+                        value={alumniForm.status}
+                        onChange={(event) => setAlumniForm((prev) => ({ ...prev, status: event.target.value }))}
+                      >
+                        <option>Alumni (En actiu)</option>
+                        <option>Alumni (No actiu)</option>
+                      </select>
+                    </section>
+
+                    <section className="primary-panel">
+                      <h3>Informacio primaria</h3>
+                      <label htmlFor="alumni-name">Nom complet</label>
+                      <input
+                        id="alumni-name"
+                        placeholder="Ex. Marc Ribas i Soler"
+                        value={alumniForm.name}
+                        onChange={(event) => setAlumniForm((prev) => ({ ...prev, name: event.target.value }))}
+                        required
+                      />
+
+                      <div className="admin-row">
+                        <div>
+                          <label htmlFor="alumni-email">Correu electronic</label>
+                          <input
+                            id="alumni-email"
+                            placeholder="marc.ribas@example.cat"
+                            value={alumniForm.email}
+                            onChange={(event) => setAlumniForm((prev) => ({ ...prev, email: event.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="alumni-phone">Telefon de contacte</label>
+                          <input
+                            id="alumni-phone"
+                            placeholder="+34 600 000 000"
+                            value={alumniForm.phone}
+                            onChange={(event) => setAlumniForm((prev) => ({ ...prev, phone: event.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      <label htmlFor="alumni-linkedin">Perfil linkedin</label>
+                      <input
+                        id="alumni-linkedin"
+                        placeholder="linkedin.com/in/usuari"
+                        value={alumniForm.linkedin}
+                        onChange={(event) => setAlumniForm((prev) => ({ ...prev, linkedin: event.target.value }))}
+                      />
+                    </section>
+                  </div>
+
+                  <section className="trajectory-panel">
+                    <div className="trajectory-header">
+                      <div>
+                        <p className="admin-eyebrow">Trajectoria professional</p>
+                        <h3>Restaurants</h3>
+                      </div>
+                      <button type="button" onClick={addExperience}>Afegir restaurant</button>
+                    </div>
+
+                    <label htmlFor="restaurant-filter">Filtrar restaurants pel nom</label>
+                    <input
+                      id="restaurant-filter"
+                      placeholder="Escriu el nom del restaurant"
+                      value={alumniForm.restaurantFilter}
+                      onChange={(event) => setAlumniForm((prev) => ({ ...prev, restaurantFilter: event.target.value }))}
+                    />
+
+                    {alumniForm.experiences.map((experience, index) => (
+                      <article key={`exp-${index}`} className="experience-card">
+                        <div className="trajectory-header">
+                          <h4>Restaurant {index + 1}</h4>
+                          {alumniForm.experiences.length > 1 && (
+                            <button type="button" onClick={() => removeExperience(index)}>Eliminar</button>
+                          )}
+                        </div>
+
+                        <label>Restaurant</label>
+                        <select
+                          value={experience.restaurantId}
+                          onChange={(event) => updateExperience(index, 'restaurantId', event.target.value)}
+                        >
+                          <option value="">Selecciona un restaurant</option>
+                          {restaurants
+                            .filter((restaurant) =>
+                              restaurant.name.toLowerCase().includes(alumniForm.restaurantFilter.toLowerCase())
+                            )
+                            .map((restaurant) => (
+                              <option key={restaurant.id} value={restaurant.id}>{restaurant.name}</option>
+                            ))}
+                        </select>
+
+                        <label>Rol</label>
+                        <input
+                          placeholder="Cap de sala, cuina, practiques..."
+                          value={experience.role}
+                          onChange={(event) => updateExperience(index, 'role', event.target.value)}
+                        />
+                        <label className="checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={experience.current}
+                            onChange={(event) => updateExperience(index, 'current', event.target.checked)}
+                          />
+                          Esta treballant actualment en aquest restaurant
+                        </label>
+                      </article>
+                    ))}
+                  </section>
+                  <button type="submit">Desar alumne</button>
                 </form>
               </section>
             )}

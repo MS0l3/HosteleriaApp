@@ -51,8 +51,8 @@ test('muestra acciones de admin si el email está en Administrator', async () =>
 
   expect(await screen.findByLabelText(/accions admin alumnes/i)).toBeInTheDocument();
 
-  fireEvent.change(screen.getByPlaceholderText(/nom alumne/i), { target: { value: 'Joana' } });
-  fireEvent.click(screen.getByRole('button', { name: /afegir alumne/i }));
+  fireEvent.change(screen.getByLabelText(/nom complet/i), { target: { value: 'Joana' } });
+  fireEvent.click(screen.getByRole('button', { name: /desar alumne/i }));
 
   await waitFor(() => expect(addAlumni).toHaveBeenCalled());
 });
