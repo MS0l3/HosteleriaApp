@@ -49,6 +49,8 @@ test('muestra acciones de admin si el email está en Administrator', async () =>
 
   await login('admin@test.com');
 
+  expect(await screen.findByRole('button', { name: /afegir alumne/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /afegir alumne/i }));
   expect(await screen.findByLabelText(/accions admin alumnes/i)).toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText(/nom complet/i), { target: { value: 'Joana' } });
@@ -65,6 +67,7 @@ test('no muestra acciones de admin si no es administrador', async () => {
 
   expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
   expect(screen.queryByLabelText(/accions admin alumnes/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /afegir alumne/i })).not.toBeInTheDocument();
 });
 
 test('mantiene sesión al refrescar y conserva rol admin', async () => {
@@ -73,7 +76,7 @@ test('mantiene sesión al refrescar y conserva rol admin', async () => {
   render(<App />);
 
   expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
-  expect(screen.getByLabelText(/accions admin alumnes/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /afegir alumne/i })).toBeInTheDocument();
 });
 
 test('logout limpia sesión y rol admin', async () => {
