@@ -3,9 +3,41 @@ import { firebaseConfig } from './firebaseConfig';
 const projectId = firebaseConfig.projectId;
 const apiKey = firebaseConfig.apiKey;
 
+const normalizeReferenceId = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  if (trimmed.includes('/')) {
+    return trimmed.split('/').pop() ?? '';
+  }
+
+  return trimmed;
+};
+
 const getStringField = (fields, candidates, fallback = '') => {
   const match = candidates
-    .map((name) => fields?.[name]?.stringValue?.trim())
+    .map((name) => {
+      const field = fields?.[name];
+      if (!field) {
+        return '';
+      }
+
+      if (typeof field.stringValue === 'string') {
+        return field.stringValue.trim();
+      }
+
+      if (typeof field.referenceValue === 'string') {
+        return normalizeReferenceId(field.referenceValue);
+      }
+
+      return '';
+    })
     .find((value) => value);
 
   return match ?? fallback;
@@ -153,8 +185,13 @@ const toPlainRelation = (doc) => {
 
   return {
     id: getDocumentId(doc),
-    alumniId: getStringField(fields, ['id_alumni', 'alumni_id', 'AlumniId', 'AlumneId', 'StudentId']),
-    restaurantId: getStringField(fields, ['id_restaurant', 'restaurant_id', 'RestaurantId']),
+    alumniId: normalizeReferenceId(
+      getStringField(fields, ['id_alumni', 'alumni_id', 'AlumniId', 'AlumneId', 'StudentId'])
+    ),
+    alumniName: getStringField(fields, ['alumni_name', 'nom_alumni', 'AlumniName', 'Name']),
+    restaurantId: normalizeReferenceId(
+      getStringField(fields, ['id_restaurant', 'restaurant_id', 'RestaurantId'])
+    ),
     role: getStringField(fields, ['rol', 'role', 'Role']),
     currentJob: getRelationBoolean(fields, ['current_job', 'CurrentJob', 'current', 'Current']),
   };
@@ -202,7 +239,7 @@ export async function fetchRestaurants() {
         return accumulator;
       }
 
-      const relationName = alumniById.get(relation.alumniId);
+      const relationName = relation.alumniName || alumniById.get(relation.alumniId) || relation.alumniId;
       if (!relationName) {
         return accumulator;
       }

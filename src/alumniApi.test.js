@@ -92,4 +92,50 @@ describe('alumniApi relations', () => {
     expect(relationPayload.fields.rol.stringValue).toBe('Cap de sala');
     expect(relationPayload.fields.current_job.stringValue).toBe('true');
   });
+
+  test('fetchRestaurants keeps relation visible when ids come as references', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          documents: [
+            {
+              name: 'projects/demo/databases/(default)/documents/Restaurant/rest-ref',
+              fields: {
+                Name: { stringValue: 'Restaurant Ref' },
+              },
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          documents: [
+            {
+              name: 'projects/demo/databases/(default)/documents/Rest-Alum/relation-ref',
+              fields: {
+                id_alumni: {
+                  referenceValue:
+                    'projects/demo/databases/(default)/documents/Alumni/alum-reference',
+                },
+                id_restaurant: {
+                  referenceValue:
+                    'projects/demo/databases/(default)/documents/Restaurant/rest-ref',
+                },
+              },
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({}),
+      });
+
+    const restaurants = await fetchRestaurants();
+
+    expect(restaurants).toHaveLength(1);
+    expect(restaurants[0].alumniList).toEqual(['alum-reference']);
+  });
 });
