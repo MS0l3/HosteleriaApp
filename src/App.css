@@ -28,6 +28,16 @@ body {
   backdrop-filter: blur(8px);
 }
 
+.logout-button {
+  margin-left: auto;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  background: #1e293b;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
 .menu-button {
   width: 42px;
   height: 42px;
@@ -112,6 +122,48 @@ body {
   z-index: 25;
 }
 
+.login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.login-card h1 {
+  margin-top: 0.8rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.login-form input {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.login-form button {
+  margin-top: 0.35rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  background: #1d4ed8;
+  color: #eff6ff;
+  cursor: pointer;
+}
+
 .content {
   padding: 1.5rem;
 }
@@ -127,6 +179,225 @@ body {
 
 .error-message {
   color: #fecaca;
+}
+
+.info-message {
+  color: #bbf7d0;
+}
+
+
+.search-label {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.alumni-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.6rem;
+}
+
+.open-admin-button {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  background: #1e293b;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.admin-panel {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.admin-panel h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  color: #f8fafc;
+}
+
+.admin-eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 800;
+  color: #93c5fd;
+}
+
+.admin-subtitle {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #cbd5e1;
+}
+
+.admin-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.photo-panel,
+.primary-panel,
+.trajectory-panel,
+.experience-card {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 1rem;
+}
+
+.upload-avatar {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 0.75rem;
+  border-radius: 999px;
+  border: 2px dashed #334155;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.upload-title {
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.upload-help {
+  margin-top: 0.2rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.primary-panel h3,
+.trajectory-panel h3 {
+  margin-top: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.9rem;
+}
+
+.primary-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.primary-panel h3 + label {
+  margin-top: -0.2rem;
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+}
+
+.admin-row > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.trajectory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.trajectory-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #cbd5e1;
+}
+
+.admin-form input {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  background: #111827;
+  color: #f8fafc;
+}
+
+.admin-form label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.admin-form .checkbox-row {
+  display: flex;
+  margin-bottom: 0;
+  font-weight: 500;
+}
+
+.admin-form button {
+  justify-self: start;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  background: #14532d;
+  color: #f0fdf4;
+  cursor: pointer;
+}
+
+.admin-form select {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  background: #111827;
+  color: #f8fafc;
+}
+
+@media (min-width: 900px) {
+  .admin-grid {
+    grid-template-columns: 280px 1fr;
+  }
+
+  .admin-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.search-input {
+  width: min(420px, 100%);
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.search-input:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 1px;
 }
 
 .alumni-grid,
@@ -160,6 +431,25 @@ body {
   overflow: hidden;
 }
 
+.card-button {
+  border: none;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-button .student-card,
+.card-button .restaurant-card {
+  height: 100%;
+}
+
+.card-button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
 .student-photo,
 .student-photo-placeholder {
   width: 100%;
@@ -169,6 +459,14 @@ body {
   display: grid;
   place-items: center;
   color: #94a3b8;
+}
+
+.restaurant-photo {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: #1e293b;
+  display: block;
 }
 
 .student-card h2,
@@ -182,6 +480,51 @@ body {
   width: 100%;
   height: 230px;
   border: none;
+}
+
+
+.card-section {
+  padding: 0 0.75rem 0.9rem;
+}
+
+.detail-card {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 760px;
+}
+
+.back-button {
+  margin: 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+  background: #1e293b;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.card-section h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  color: #93c5fd;
+}
+
+.info-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.25rem;
+  color: #cbd5e1;
+}
+
+.info-list a {
+  color: #93c5fd;
+}
+
+.info-list a:hover {
+  color: #bfdbfe;
 }
 
 .restaurant-card p {
