@@ -66,6 +66,36 @@ const parseStringList = (arrayField) => {
     .filter(Boolean);
 };
 
+const parseRelationArray = (arrayField) => {
+  const values = arrayField?.arrayValue?.values;
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values
+    .map((entry) => {
+      const mapFields = entry?.mapValue?.fields;
+      if (!mapFields) {
+        return null;
+      }
+
+      const restaurantId = normalizeReferenceId(
+        getStringField(mapFields, ['RestaurantId', 'restaurant_id', 'id_restaurant'])
+      );
+
+      if (!restaurantId) {
+        return null;
+      }
+
+      return {
+        restaurantId,
+        role: getStringField(mapFields, ['Role', 'rol', 'role']),
+        current: getRelationBoolean(mapFields, ['Current', 'current_job', 'current']),
+      };
+    })
+    .filter(Boolean);
+};
+
 const getRelationBoolean = (fields, candidates, fallback = false) => {
   for (const candidate of candidates) {
     const field = fields?.[candidate];
@@ -104,6 +134,7 @@ const toPlainAlumni = (doc) => {
       linkedin: getStringField(fields, ['LinkedIn', 'Linkedin', 'LinkedInURL']),
     },
     status: getStringField(fields, ['Status', 'Estat']),
+    experiences: parseRelationArray(fields.Restaurants),
   };
 };
 
@@ -216,8 +247,36 @@ async function createDocument(collectionName, fields, errorMessage) {
 }
 
 export async function fetchAlumni() {
-  const documents = await fetchCollection('Alumni', 'No se pudo cargar Alumni desde Firebase.');
-  return documents.map(toPlainAlumni);
+  const [alumniDocs, relationDocs] = await Promise.all([
+    fetchCollection('Alumni', 'No se pudo cargar Alumni desde Firebase.'),
+    fetchCollection('Rest-Alum', 'No se pudo cargar Rest-Alum desde Firebase.').catch(() => []),
+  ]);
+
+  const plainAlumni = alumniDocs.map(toPlainAlumni);
+  const relationByAlumniId = relationDocs
+    .map(toPlainRelation)
+    .reduce((accumulator, relation) => {
+      if (!relation.alumniId || !relation.restaurantId) {
+        return accumulator;
+      }
+
+      const existing = accumulator.get(relation.alumniId) ?? [];
+      existing.push({
+        restaurantId: relation.restaurantId,
+        role: relation.role,
+        current: relation.currentJob,
+      });
+      accumulator.set(relation.alumniId, existing);
+      return accumulator;
+    }, new Map());
+
+  return plainAlumni.map((student) => ({
+    ...student,
+    experiences: [
+      ...(student.experiences ?? []),
+      ...(relationByAlumniId.get(student.id) ?? []),
+    ],
+  }));
 }
 
 export async function fetchRestaurants() {

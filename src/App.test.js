@@ -141,3 +141,39 @@ test('desde fitxa restaurant se puede abrir la fitxa del alumne relacionado', as
 
   expect(await screen.findByRole('heading', { name: /fitxa alumne: anna soler/i })).toBeInTheDocument();
 });
+
+test('desde fitxa alumne se puede abrir la fitxa del restaurant relacionado', async () => {
+  fetchAlumni.mockResolvedValue([
+    {
+      id: 'alum-1',
+      name: 'Anna Soler',
+      photoUrl: '',
+      contact: { email: 'anna@test.com', phone: '', linkedin: '' },
+      experiences: [
+        {
+          restaurantId: 'rest-1',
+          role: 'Cuiner/a',
+          current: true,
+        },
+      ],
+    },
+  ]);
+  fetchRestaurants.mockResolvedValue([
+    {
+      id: 'rest-1',
+      name: 'Can Test',
+      photoUrl: '',
+      contact: {},
+      alumniMembers: [],
+    },
+  ]);
+
+  render(<App />);
+  await login('user@test.com');
+
+  fireEvent.click(await screen.findByRole('button', { name: /anna soler/i }));
+  expect(await screen.findByRole('button', { name: /can test/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /can test/i }));
+
+  expect(await screen.findByRole('heading', { name: /fitxa restaurant: can test/i })).toBeInTheDocument();
+});

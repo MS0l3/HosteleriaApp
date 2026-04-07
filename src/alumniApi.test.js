@@ -1,4 +1,4 @@
-import { addAlumni, fetchRestaurants } from './alumniApi';
+import { addAlumni, fetchAlumni, fetchRestaurants } from './alumniApi';
 
 jest.mock('./firebaseConfig', () => ({
   firebaseConfig: {
@@ -146,5 +146,63 @@ describe('alumniApi relations', () => {
 
     expect(restaurants).toHaveLength(1);
     expect(restaurants[0].alumniList).toEqual(['alum-reference']);
+  });
+
+  test('fetchAlumni merges Restaurants array and Rest-Alum relation entries', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          documents: [
+            {
+              name: 'projects/demo/databases/(default)/documents/Alumni/alum-1',
+              fields: {
+                Name: { stringValue: 'Anna Soler' },
+                Restaurants: {
+                  arrayValue: {
+                    values: [
+                      {
+                        mapValue: {
+                          fields: {
+                            RestaurantId: { stringValue: 'rest-array' },
+                            Role: { stringValue: 'Pastissera' },
+                            Current: { booleanValue: true },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          documents: [
+            {
+              name: 'projects/demo/databases/(default)/documents/Rest-Alum/relation-1',
+              fields: {
+                id_alumni: { stringValue: 'alum-1' },
+                id_restaurant: { stringValue: 'rest-rel' },
+                rol: { stringValue: 'Cuiner/a' },
+                current_job: { stringValue: 'false' },
+              },
+            },
+          ],
+        }),
+      });
+
+    const alumni = await fetchAlumni();
+
+    expect(alumni).toHaveLength(1);
+    expect(alumni[0].experiences).toEqual(
+      expect.arrayContaining([
+        { restaurantId: 'rest-array', role: 'Pastissera', current: true },
+        { restaurantId: 'rest-rel', role: 'Cuiner/a', current: false },
+      ])
+    );
   });
 });

@@ -288,6 +288,27 @@ function App() {
     setActiveSection('restaurant-detail');
   };
 
+  const openAlumniRestaurantDetail = async (experience) => {
+    if (!experience?.restaurantId) {
+      return;
+    }
+
+    const existingRestaurant = restaurants.find((restaurant) => restaurant.id === experience.restaurantId);
+    if (existingRestaurant) {
+      openRestaurantDetail(existingRestaurant);
+      return;
+    }
+
+    try {
+      const result = await fetchRestaurants();
+      setRestaurants(result);
+      const matchedRestaurant = result.find((restaurant) => restaurant.id === experience.restaurantId);
+      if (matchedRestaurant) {
+        openRestaurantDetail(matchedRestaurant);
+      }
+    } catch (_error) {}
+  };
+
   const updateExperience = (index, key, value) => {
     setAlumniForm((prev) => ({
       ...prev,
@@ -350,6 +371,20 @@ function App() {
       .then((result) => setRestaurants(result))
       .catch(() => {});
   }, [isAuthenticated, isAdmin, restaurants.length]);
+
+  useEffect(() => {
+    if (!isAuthenticated || activeSection !== 'alumni-detail' || restaurants.length) {
+      return;
+    }
+
+    if (!selectedAlumni?.experiences?.length) {
+      return;
+    }
+
+    fetchRestaurants()
+      .then((result) => setRestaurants(result))
+      .catch(() => {});
+  }, [isAuthenticated, activeSection, selectedAlumni, restaurants.length]);
 
   useEffect(() => {
     if (activeSection !== 'restaurants') {
@@ -707,6 +742,43 @@ function App() {
                   )}
                 </li>
               </ul>
+            </section>
+            <section className="card-section" aria-label={`Restaurants de ${selectedAlumni.name}`}>
+              <h3>Restaurants</h3>
+              {selectedAlumni.experiences?.length ? (
+                <div className="alumni-restaurants-list">
+                  {selectedAlumni.experiences.map((experience, index) => {
+                    const restaurant = restaurants.find((item) => item.id === experience.restaurantId);
+                    return (
+                      <button
+                        key={`${experience.restaurantId}-${index}`}
+                        type="button"
+                        className="alumni-restaurant-item"
+                        onClick={() => openAlumniRestaurantDetail(experience)}
+                      >
+                        {restaurant?.photoUrl ? (
+                          <img src={restaurant.photoUrl} alt={restaurant.name} className="alumni-restaurant-photo" />
+                        ) : (
+                          <img
+                            src={defaultRestaurantPhoto}
+                            alt={`Foto predeterminada de ${restaurant?.name ?? 'restaurant'}`}
+                            className="alumni-restaurant-photo"
+                          />
+                        )}
+                        <div>
+                          <p className="alumni-restaurant-name">{restaurant?.name ?? 'Restaurant'}</p>
+                          {experience.role ? <p className="alumni-restaurant-role">{experience.role}</p> : null}
+                          <p className="alumni-restaurant-status">
+                            {experience.current ? 'Actiu en aquest restaurant' : 'No actiu en aquest restaurant'}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p>No hi ha restaurants associats.</p>
+              )}
             </section>
           </article>
         )}

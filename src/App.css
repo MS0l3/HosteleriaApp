@@ -577,6 +577,51 @@ body {
   font-size: 0.88rem;
 }
 
+.alumni-restaurants-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.alumni-restaurant-item {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 0.55rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 0.7rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.alumni-restaurant-photo {
+  width: 72px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #1e293b;
+}
+
+.alumni-restaurant-name {
+  margin: 0;
+  font-weight: 700;
+}
+
+.alumni-restaurant-role {
+  margin: 0.15rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+}
+
+.alumni-restaurant-status {
+  margin: 0.15rem 0 0;
+  color: #93c5fd;
+  font-size: 0.9rem;
+}
+
 @media (min-width: 992px) {
   .menu-button {
     display: none;
