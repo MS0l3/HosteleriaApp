@@ -631,6 +631,7 @@ function App() {
                         placeholder="marc.ribas@example.cat"
                         value={alumniForm.email}
                         onChange={(event) => setAlumniForm((prev) => ({ ...prev, email: event.target.value }))}
+                        required
                       />
                     </div>
                     <div>
@@ -640,6 +641,7 @@ function App() {
                         placeholder="+34 600 000 000"
                         value={alumniForm.phone}
                         onChange={(event) => setAlumniForm((prev) => ({ ...prev, phone: event.target.value }))}
+                        required
                       />
                     </div>
                   </div>
@@ -867,6 +869,7 @@ function App() {
                       placeholder="+34 900 000 000"
                       value={restaurantForm.phone}
                       onChange={(event) => setRestaurantForm((prev) => ({ ...prev, phone: event.target.value }))}
+                      required
                     />
                   </div>
                 </div>
@@ -886,6 +889,7 @@ function App() {
                       placeholder="41.39"
                       value={restaurantForm.lat}
                       onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lat: event.target.value }))}
+                      required
                     />
                   </div>
                   <div>
@@ -895,6 +899,7 @@ function App() {
                       placeholder="2.16"
                       value={restaurantForm.lng}
                       onChange={(event) => setRestaurantForm((prev) => ({ ...prev, lng: event.target.value }))}
+                      required
                     />
                   </div>
                 </div>

@@ -177,3 +177,21 @@ test('desde fitxa alumne se puede abrir la fitxa del restaurant relacionado', as
 
   expect(await screen.findByRole('heading', { name: /fitxa restaurant: can test/i })).toBeInTheDocument();
 });
+
+test('campos obligatorios en formularios de afegir alumne y restaurant', async () => {
+  isAdministrator.mockResolvedValue(true);
+  render(<App />);
+  await login('admin@test.com');
+
+  fireEvent.click(await screen.findByRole('button', { name: /afegir alumne/i }));
+  expect(screen.getByLabelText(/nom complet/i)).toBeRequired();
+  expect(screen.getByLabelText(/correu electronic/i)).toBeRequired();
+  expect(screen.getByLabelText(/telefon de contacte/i)).toBeRequired();
+
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /afegir restaurant/i }));
+  expect(screen.getByLabelText(/nom restaurant/i)).toBeRequired();
+  expect(screen.getByLabelText(/^phone$/i)).toBeRequired();
+  expect(screen.getByLabelText(/latitud/i)).toBeRequired();
+  expect(screen.getByLabelText(/longitud/i)).toBeRequired();
+});
