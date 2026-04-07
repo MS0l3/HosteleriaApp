@@ -255,6 +255,34 @@ function App() {
     setActiveSection('alumni-detail');
   };
 
+  const openRestaurantAlumniDetail = async (alumniMember) => {
+    if (!alumniMember) {
+      return;
+    }
+
+    if (alumniMember.id) {
+      try {
+        const result = await fetchAlumni();
+        const fullProfile = result.find((student) => student.id === alumniMember.id);
+        if (fullProfile) {
+          openAlumniDetail(fullProfile);
+          return;
+        }
+      } catch (_error) {}
+    }
+
+    openAlumniDetail({
+      id: alumniMember.id ?? '',
+      name: alumniMember.name ?? 'Alumne',
+      photoUrl: alumniMember.photoUrl ?? '',
+      contact: {
+        email: '',
+        phone: '',
+        linkedin: '',
+      },
+    });
+  };
+
   const openRestaurantDetail = (restaurant) => {
     setSelectedRestaurant(restaurant);
     setActiveSection('restaurant-detail');
@@ -841,12 +869,37 @@ function App() {
 
             <section className="card-section" aria-label={`Alumnes de ${selectedRestaurant.name}`}>
               <h3>Llistat alumnes</h3>
-              {selectedRestaurant.alumniList?.length ? (
-                <ul className="info-list">
-                  {selectedRestaurant.alumniList.map((alumniName) => (
-                    <li key={alumniName}>{alumniName}</li>
+              {selectedRestaurant.alumniMembers?.length ? (
+                <div className="restaurant-alumni-list">
+                  {selectedRestaurant.alumniMembers.map((alumniMember) => (
+                    <button
+                      key={`${alumniMember.id}-${alumniMember.name}`}
+                      type="button"
+                      className="restaurant-alumni-item"
+                      onClick={() => openRestaurantAlumniDetail(alumniMember)}
+                    >
+                      {alumniMember.photoUrl ? (
+                        <img src={alumniMember.photoUrl} alt={alumniMember.name} className="restaurant-alumni-photo" />
+                      ) : (
+                        <img
+                          src={defaultAlumniPhoto}
+                          alt={`Foto predeterminada de ${alumniMember.name}`}
+                          className="restaurant-alumni-photo"
+                        />
+                      )}
+                      <div>
+                        <p className="restaurant-alumni-name">{alumniMember.name}</p>
+                        <p className="restaurant-alumni-status">
+                          {alumniMember.currentJob === null
+                            ? 'Estat no disponible'
+                            : alumniMember.currentJob
+                              ? 'Actiu al restaurant'
+                              : 'No actiu al restaurant'}
+                        </p>
+                      </div>
+                    </button>
                   ))}
-                </ul>
+                </div>
               ) : (
                 <p>No hi ha alumnes associats.</p>
               )}

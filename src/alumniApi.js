@@ -103,6 +103,7 @@ const toPlainAlumni = (doc) => {
       phone: getStringField(fields, ['Phone', 'Telefon', 'Telèfon']),
       linkedin: getStringField(fields, ['LinkedIn', 'Linkedin', 'LinkedInURL']),
     },
+    status: getStringField(fields, ['Status', 'Estat']),
   };
 };
 
@@ -226,15 +227,12 @@ export async function fetchRestaurants() {
     fetchCollection('Alumni', 'No se pudo cargar Alumni desde Firebase.').catch(() => []),
   ]);
 
-  const alumniById = new Map(
-    alumniDocs
-      .map(toPlainAlumni)
-      .map((student) => [student.id, student.name])
-  );
+  const plainAlumni = alumniDocs.map(toPlainAlumni);
+  const alumniById = new Map(plainAlumni.map((student) => [student.id, student.name]));
+  const alumniDetailById = new Map(plainAlumni.map((student) => [student.id, student]));
+  const plainRelations = relationDocs.map(toPlainRelation);
 
-  const relationsByRestaurantId = relationDocs
-    .map(toPlainRelation)
-    .reduce((accumulator, relation) => {
+  const relationsByRestaurantId = plainRelations.reduce((accumulator, relation) => {
       if (!relation.restaurantId || !relation.alumniId) {
         return accumulator;
       }
@@ -254,10 +252,39 @@ export async function fetchRestaurants() {
     const restaurant = toPlainRestaurant(doc);
     const relatedAlumni = relationsByRestaurantId.get(restaurant.id) ?? [];
     const mergedAlumni = Array.from(new Set([...restaurant.alumniList, ...relatedAlumni]));
+    const alumniMembersFromRelations = plainRelations
+      .filter((relation) => relation.restaurantId === restaurant.id)
+      .map((relation) => {
+        const fullAlumni = alumniDetailById.get(relation.alumniId);
+        const relationName = relation.alumniName || fullAlumni?.name || relation.alumniId;
+        return {
+          id: relation.alumniId,
+          name: relationName,
+          photoUrl: fullAlumni?.photoUrl ?? '',
+          currentJob: relation.currentJob,
+        };
+      });
+
+    const alumniMembers = Array.from(
+      new Map(
+        alumniMembersFromRelations
+          .concat(
+            restaurant.alumniList.map((name) => ({
+              id: '',
+              name,
+              photoUrl: '',
+              currentJob: null,
+            }))
+          )
+          .filter((member) => member.name)
+          .map((member) => [`${member.id}-${member.name}`, member])
+      ).values()
+    );
 
     return {
       ...restaurant,
       alumniList: mergedAlumni,
+      alumniMembers,
     };
   });
 }

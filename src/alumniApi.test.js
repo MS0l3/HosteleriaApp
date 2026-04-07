@@ -65,6 +65,14 @@ describe('alumniApi relations', () => {
 
     expect(restaurants).toHaveLength(1);
     expect(restaurants[0].alumniList).toEqual(['Anna Soler']);
+    expect(restaurants[0].alumniMembers).toEqual([
+      {
+        id: 'alum-1',
+        name: 'Anna Soler',
+        photoUrl: '',
+        currentJob: false,
+      },
+    ]);
   });
 
   test('addAlumni also writes Rest-Alum relations for selected experiences', async () => {

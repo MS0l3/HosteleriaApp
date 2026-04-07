@@ -104,3 +104,38 @@ test('logout limpia sesión y rol admin', async () => {
   expect(window.localStorage.getItem('hosteleriaapp-auth')).toBeNull();
   expect(window.localStorage.getItem('hosteleriaapp-admin')).toBeNull();
 });
+
+test('desde fitxa restaurant se puede abrir la fitxa del alumne relacionado', async () => {
+  fetchRestaurants.mockResolvedValue([
+    {
+      id: 'rest-1',
+      name: 'Can Test',
+      contact: {},
+      alumniMembers: [
+        {
+          id: 'alum-1',
+          name: 'Anna Soler',
+          photoUrl: '',
+          currentJob: true,
+        },
+      ],
+    },
+  ]);
+  fetchAlumni.mockResolvedValue([
+    {
+      id: 'alum-1',
+      name: 'Anna Soler',
+      photoUrl: '',
+      contact: { email: 'anna@test.com', phone: '', linkedin: '' },
+    },
+  ]);
+
+  render(<App />);
+  await login('user@test.com');
+
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /can test/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /anna soler/i }));
+
+  expect(await screen.findByRole('heading', { name: /fitxa alumne: anna soler/i })).toBeInTheDocument();
+});
