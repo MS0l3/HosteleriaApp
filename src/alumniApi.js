@@ -261,6 +261,7 @@ export async function fetchRestaurants() {
           id: relation.alumniId,
           name: relationName,
           photoUrl: fullAlumni?.photoUrl ?? '',
+          role: relation.role ?? '',
           currentJob: relation.currentJob,
         };
       });
@@ -273,6 +274,7 @@ export async function fetchRestaurants() {
               id: '',
               name,
               photoUrl: '',
+              role: '',
               currentJob: null,
             }))
           )

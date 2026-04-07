@@ -116,6 +116,7 @@ test('desde fitxa restaurant se puede abrir la fitxa del alumne relacionado', as
           id: 'alum-1',
           name: 'Anna Soler',
           photoUrl: '',
+          role: 'Cuiner/a',
           currentJob: true,
         },
       ],
@@ -135,6 +136,7 @@ test('desde fitxa restaurant se puede abrir la fitxa del alumne relacionado', as
 
   fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
   fireEvent.click(await screen.findByRole('button', { name: /can test/i }));
+  expect(await screen.findByText(/cuiner\/a/i)).toBeInTheDocument();
   fireEvent.click(await screen.findByRole('button', { name: /anna soler/i }));
 
   expect(await screen.findByRole('heading', { name: /fitxa alumne: anna soler/i })).toBeInTheDocument();

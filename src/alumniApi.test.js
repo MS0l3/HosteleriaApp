@@ -70,6 +70,7 @@ describe('alumniApi relations', () => {
         id: 'alum-1',
         name: 'Anna Soler',
         photoUrl: '',
+        role: 'Cuiner/a',
         currentJob: false,
       },
     ]);

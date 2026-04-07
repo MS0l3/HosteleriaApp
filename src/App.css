@@ -571,6 +571,12 @@ body {
   font-size: 0.9rem;
 }
 
+.restaurant-alumni-role {
+  margin: 0.15rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+}
+
 @media (min-width: 992px) {
   .menu-button {
     display: none;

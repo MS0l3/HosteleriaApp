@@ -889,6 +889,9 @@ function App() {
                       )}
                       <div>
                         <p className="restaurant-alumni-name">{alumniMember.name}</p>
+                        {alumniMember.role ? (
+                          <p className="restaurant-alumni-role">{alumniMember.role}</p>
+                        ) : null}
                         <p className="restaurant-alumni-status">
                           {alumniMember.currentJob === null
                             ? 'Estat no disponible'
