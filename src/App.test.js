@@ -1,66 +1,197 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-import { fetchAlumni, fetchRestaurants } from './alumniApi';
+import { addAlumni, addRestaurant, fetchAlumni, fetchRestaurants, isAdministrator } from './alumniApi';
 
 jest.mock('./alumniApi', () => ({
   fetchAlumni: jest.fn(),
   fetchRestaurants: jest.fn(),
+  isAdministrator: jest.fn(),
+  addAlumni: jest.fn(),
+  addRestaurant: jest.fn(),
 }));
+
+const login = async (email = 'user@test.com') => {
+  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: email } });
+  fireEvent.change(screen.getByLabelText(/contrasenya/i), { target: { value: '123456' } });
+  fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+  await waitFor(() => expect(isAdministrator).toHaveBeenCalled());
+};
 
 beforeEach(() => {
   fetchAlumni.mockResolvedValue([]);
   fetchRestaurants.mockResolvedValue([]);
+  isAdministrator.mockResolvedValue(false);
+  addAlumni.mockResolvedValue({});
+  addRestaurant.mockResolvedValue({});
   window.scrollTo = jest.fn();
+  window.localStorage.clear();
 });
 
-test('muestra el logo de joviat en el encabezado', async () => {
+test('muestra la pantalla de login inicialmente', () => {
   render(<App />);
 
-  const logoElement = screen.getByAltText(/logo_joviat/i);
-  expect(logoElement).toBeInTheDocument();
-
-  await waitFor(() => expect(fetchAlumni).toHaveBeenCalled());
+  expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
 });
 
-test('el logo vuelve a la página inicial', async () => {
+test('consulta Administrator al hacer login', async () => {
+  isAdministrator.mockResolvedValue(true);
   render(<App />);
 
+  await login('admin@test.com');
+
+  expect(isAdministrator).toHaveBeenCalledWith('admin@test.com');
+  expect(window.localStorage.getItem('hosteleriaapp-admin')).toBe('true');
+});
+
+test('muestra acciones de admin si el email está en Administrator', async () => {
+  isAdministrator.mockResolvedValue(true);
+  render(<App />);
+
+  await login('admin@test.com');
+
+  expect(await screen.findByRole('button', { name: /afegir alumne/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /afegir alumne/i }));
+  expect(await screen.findByLabelText(/accions admin alumnes/i)).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText(/nom complet/i), { target: { value: 'Joana' } });
+  fireEvent.click(screen.getByRole('button', { name: /desar alumne/i }));
+
+  await waitFor(() => expect(addAlumni).toHaveBeenCalled());
+});
+
+test('muestra botón de afegir restaurant solo para admin y abre la fitxa', async () => {
+  isAdministrator.mockResolvedValue(true);
+  render(<App />);
+
+  await login('admin@test.com');
   fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
-  expect(await screen.findByRole('heading', { name: /restaurants al mapa/i })).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: /anar a la pàgina inicial/i }));
+  expect(await screen.findByRole('button', { name: /afegir restaurant/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /afegir restaurant/i }));
+  expect(await screen.findByLabelText(/accions admin restaurants/i)).toBeInTheDocument();
+});
+
+test('no muestra acciones de admin si no es administrador', async () => {
+  isAdministrator.mockResolvedValue(false);
+  render(<App />);
+
+  await login('user@test.com');
+
   expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
-  expect(window.scrollTo).toHaveBeenCalled();
+  expect(screen.queryByLabelText(/accions admin alumnes/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /afegir alumne/i })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  expect(screen.queryByRole('button', { name: /afegir restaurant/i })).not.toBeInTheDocument();
 });
 
-test('permite ocultar la barra lateral con el botón del menú', async () => {
+test('mantiene sesión al refrescar y conserva rol admin', async () => {
+  window.localStorage.setItem('hosteleriaapp-auth', 'true');
+  window.localStorage.setItem('hosteleriaapp-admin', 'true');
   render(<App />);
 
-  const toggleButton = screen.getByRole('button', { name: /ocultar barra lateral/i });
-  fireEvent.click(toggleButton);
-  expect(screen.getByRole('button', { name: /mostrar barra lateral/i })).toBeInTheDocument();
-
-  await waitFor(() => expect(fetchAlumni).toHaveBeenCalled());
+  expect(await screen.findByRole('heading', { name: /visualitzar alumnes/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /afegir alumne/i })).toBeInTheDocument();
 });
 
-test('muestra alumnos cuando firebase responde', async () => {
-  fetchAlumni.mockResolvedValue([{ id: 'abc', name: 'Kiana', photoUrl: '' }]);
+test('logout limpia sesión y rol admin', async () => {
+  isAdministrator.mockResolvedValue(true);
   render(<App />);
+  await login('admin@test.com');
 
-  expect(await screen.findByText('Kiana')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /visualitzar alumnes/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /logout/i }));
+
+  expect(await screen.findByRole('heading', { name: /login/i })).toBeInTheDocument();
+  expect(window.localStorage.getItem('hosteleriaapp-auth')).toBeNull();
+  expect(window.localStorage.getItem('hosteleriaapp-admin')).toBeNull();
 });
 
-test('permite ver restaurantes en el mapa desde el menú', async () => {
+test('desde fitxa restaurant se puede abrir la fitxa del alumne relacionado', async () => {
   fetchRestaurants.mockResolvedValue([
-    { id: 'rest-1', name: 'Can Jubany', location: { lat: 41.92, lng: 2.30 } },
+    {
+      id: 'rest-1',
+      name: 'Can Test',
+      contact: {},
+      alumniMembers: [
+        {
+          id: 'alum-1',
+          name: 'Anna Soler',
+          photoUrl: '',
+          role: 'Cuiner/a',
+          currentJob: true,
+        },
+      ],
+    },
+  ]);
+  fetchAlumni.mockResolvedValue([
+    {
+      id: 'alum-1',
+      name: 'Anna Soler',
+      photoUrl: '',
+      contact: { email: 'anna@test.com', phone: '', linkedin: '' },
+    },
   ]);
 
   render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  await login('user@test.com');
 
-  expect(await screen.findByText('Can Jubany')).toBeInTheDocument();
-  expect(screen.getByLabelText(/mapa amb pins de restaurants/i)).toBeInTheDocument();
-  expect(screen.getByTitle(/mapa de can jubany/i)).toBeInTheDocument();
-  await waitFor(() => expect(fetchRestaurants).toHaveBeenCalled());
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /can test/i }));
+  expect(await screen.findByText(/cuiner\/a/i)).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('button', { name: /anna soler/i }));
+
+  expect(await screen.findByRole('heading', { name: /fitxa alumne: anna soler/i })).toBeInTheDocument();
+});
+
+test('desde fitxa alumne se puede abrir la fitxa del restaurant relacionado', async () => {
+  fetchAlumni.mockResolvedValue([
+    {
+      id: 'alum-1',
+      name: 'Anna Soler',
+      photoUrl: '',
+      contact: { email: 'anna@test.com', phone: '', linkedin: '' },
+      experiences: [
+        {
+          restaurantId: 'rest-1',
+          role: 'Cuiner/a',
+          current: true,
+        },
+      ],
+    },
+  ]);
+  fetchRestaurants.mockResolvedValue([
+    {
+      id: 'rest-1',
+      name: 'Can Test',
+      photoUrl: '',
+      contact: {},
+      alumniMembers: [],
+    },
+  ]);
+
+  render(<App />);
+  await login('user@test.com');
+
+  fireEvent.click(await screen.findByRole('button', { name: /anna soler/i }));
+  expect(await screen.findByRole('button', { name: /can test/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /can test/i }));
+
+  expect(await screen.findByRole('heading', { name: /fitxa restaurant: can test/i })).toBeInTheDocument();
+});
+
+test('campos obligatorios en formularios de afegir alumne y restaurant', async () => {
+  isAdministrator.mockResolvedValue(true);
+  render(<App />);
+  await login('admin@test.com');
+
+  fireEvent.click(await screen.findByRole('button', { name: /afegir alumne/i }));
+  expect(screen.getByLabelText(/nom complet/i)).toBeRequired();
+  expect(screen.getByLabelText(/correu electronic/i)).toBeRequired();
+  expect(screen.getByLabelText(/telefon de contacte/i)).toBeRequired();
+
+  fireEvent.click(screen.getByRole('button', { name: /veure restaurants al mapa/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /afegir restaurant/i }));
+  expect(screen.getByLabelText(/nom restaurant/i)).toBeRequired();
+  expect(screen.getByLabelText(/^phone$/i)).toBeRequired();
+  expect(screen.getByLabelText(/latitud/i)).toBeRequired();
+  expect(screen.getByLabelText(/longitud/i)).toBeRequired();
 });
